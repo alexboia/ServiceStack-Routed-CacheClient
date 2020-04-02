@@ -36,10 +36,12 @@ using System.Text;
 using System.Threading.Tasks;
 using ServiceStack.Caching;
 
-namespace LiveLMS.RoutedCacheClient
+namespace LVD.ServiceStackRoutedCacheClient
 {
    public interface IRoutedCacheClient : ICacheClientExtended
    {
-      void RegisterRoutedClient ( IRoutedCacheClientRule rule );
+      IRoutedCacheClient PushClientWithRule(IRoutedCacheClientRule rule);
+
+      void ClearRules();
    }
 }

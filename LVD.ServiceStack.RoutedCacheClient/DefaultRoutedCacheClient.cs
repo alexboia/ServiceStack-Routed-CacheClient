@@ -36,118 +36,149 @@ using System.Text;
 using System.Threading.Tasks;
 using ServiceStack.Caching;
 
-namespace LiveLMS.RoutedCacheClient
+namespace LVD.ServiceStackRoutedCacheClient
 {
    public class DefaultRoutedCacheClient : IRoutedCacheClient
    {
       private Stack<IRoutedCacheClientRule> mRules =
          new Stack<IRoutedCacheClientRule>();
 
-      public DefaultRoutedCacheClient ( ICacheClient fallbackClient )
+      public DefaultRoutedCacheClient(ICacheClient fallbackClient)
       {
-         if ( fallbackClient == null )
-            throw new ArgumentNullException( nameof( fallbackClient ) );
+         if (fallbackClient == null)
+            throw new ArgumentNullException(nameof(fallbackClient));
 
-         mRules.Push( new AllwaysTrueCacheClientRule( fallbackClient ) );
+         mRules.Push(new AllwaysTrueCacheClientRule(fallbackClient));
       }
 
-      private IRoutedCacheClientRule FindRule ( string key )
+      private IRoutedCacheClientRule FindRule(string key)
       {
-         return mRules.FirstOrDefault( r => r.Matches( key ) );
+         return mRules.FirstOrDefault(r => r.Matches(key));
       }
 
-      private ICacheClient FindClient ( string key )
+      private ICacheClient FindClient(string key)
       {
-         return FindRule( key ).Client;
+         return FindRule(key).Client;
       }
 
-      public bool Add<T> ( string key, T value )
+      public bool Add<T>(string key, T value)
       {
-         return FindClient( key )
-            .Add<T>( key, value );
+         return FindClient(key)
+            .Add<T>(key, value);
       }
 
-      public bool Add<T> ( string key, T value, TimeSpan expiresIn )
+      public bool Add<T>(string key, T value, TimeSpan expiresIn)
       {
-         return FindClient( key )
-            .Add<T>( key, value, expiresIn );
+         return FindClient(key)
+            .Add<T>(key, value, expiresIn);
       }
 
-      public bool Add<T> ( string key, T value, DateTime expiresAt )
+      public bool Add<T>(string key, T value, DateTime expiresAt)
       {
-         return FindClient( key )
-            .Add<T>( key, value, expiresAt );
+         return FindClient(key)
+            .Add<T>(key, value, expiresAt);
       }
 
-      public long Decrement ( string key, uint amount )
+      public long Decrement(string key, uint amount)
       {
-         return FindClient( key )
-            .Decrement( key, amount );
+         return FindClient(key)
+            .Decrement(key, amount);
       }
 
-      public void FlushAll ()
+      public void FlushAll()
       {
          List<ICacheClient> visited = new List<ICacheClient>();
 
-         foreach ( IRoutedCacheClientRule rule in mRules )
+         try
          {
-            if ( !visited.Contains( rule.Client ) )
+            //A cache client may be registered multiple 
+            // times with different rules;
+            // so we need to keep a book on what we've already flushed
+            foreach (IRoutedCacheClientRule rule in mRules)
             {
-               rule.Client.FlushAll();
-               visited.Add( rule.Client );
+               if (!visited.Contains(rule.Client))
+               {
+                  rule.Client.FlushAll();
+                  visited.Add(rule.Client);
+               }
             }
          }
-
-         visited.Clear();
+         finally
+         {
+            visited.Clear();
+         }
       }
 
-      public T Get<T> ( string key )
+      public T Get<T>(string key)
       {
-         return FindClient( key )
-            .Get<T>( key );
+         return FindClient(key)
+            .Get<T>(key);
       }
 
-      public IDictionary<string, T> GetAll<T> ( IEnumerable<string> keys )
+      public IDictionary<string, T> GetAll<T>(IEnumerable<string> keys)
       {
+         if (keys == null)
+            throw new ArgumentNullException(nameof(keys));
+
          IDictionary<string, T> values =
             new Dictionary<string, T>();
 
          PerKeyCacheClientRuleAggregator aggregator
             = new PerKeyCacheClientRuleAggregator();
 
-         aggregator.CollectAll( keys, FindRule );
-
-         foreach ( KeyValuePair<Guid, IList<string>> keysForClient in aggregator.KeysForCacheClient )
+         try
          {
-            ICacheClient client = aggregator
-               .CacheClients[ keysForClient.Key ];
+            //The naive approach would be to find the cache client for each key
+            // then issue a Get() call for that key and value,
+            // but that won't use any optimisation a cache client might have for bulk operations.
+            //Issuing a GetAll() for each client with the given set of values, doesn't work either,
+            // since that would bypass any routing.
+            //So, we need to see first which key by which client can be resolved,
+            // and then issue a GetAll() on each client using only the subset of keys
+            // it can resolve
 
-            IDictionary<string, T> clientValues =
-               client.GetAll<T>( keysForClient.Value );
+            aggregator.CollectAll(keys, FindRule);
 
-            if ( clientValues != null )
-               foreach ( KeyValuePair<string, T> valuePair in clientValues )
-                  values.Add( valuePair );
+            foreach (KeyValuePair<Guid, IList<string>> keysForClient in aggregator.KeysForCacheClient)
+            {
+               ICacheClient client = aggregator
+                  .CacheClients[keysForClient.Key];
+
+               IDictionary<string, T> clientValues =
+                  client.GetAll<T>(keysForClient.Value);
+
+               if (clientValues != null)
+                  foreach (KeyValuePair<string, T> valuePair in clientValues)
+                     values.Add(valuePair);
+            }
+         }
+         finally
+         {
+            aggregator.Clear();
          }
 
-         aggregator.Clear();
          return values;
       }
 
-      public IEnumerable<string> GetKeysByPattern ( string pattern )
+      public IEnumerable<string> GetKeysByPattern(string pattern)
       {
          List<string> keys = new List<string>();
          List<ICacheClient> visited = new List<ICacheClient>();
 
-         foreach ( IRoutedCacheClientRule rule in mRules )
+         //A cache client may be registered multiple 
+         // times with different rules;
+         // so we need to keep a book on what we've already checked
+         //Also, since we are allowing a user to register a regular ICacheClient,
+         // we also need to filter out cache clients that are not ICacheClientExtended
+         foreach (IRoutedCacheClientRule rule in mRules)
          {
-            if ( rule.Client is ICacheClientExtended && !visited.Contains( rule.Client ) )
+            if (rule.Client is ICacheClientExtended && !visited.Contains(rule.Client))
             {
-               IEnumerable<string> clientKeys = ( ( ICacheClientExtended )rule.Client ).GetKeysByPattern( pattern )
+               IEnumerable<string> clientKeys = ((ICacheClientExtended)rule.Client).GetKeysByPattern(pattern)
                   ?? new List<string>();
 
-               keys.AddRange( clientKeys );
-               visited.Add( rule.Client );
+               keys.AddRange(clientKeys);
+               visited.Add(rule.Client);
             }
          }
 
@@ -155,118 +186,168 @@ namespace LiveLMS.RoutedCacheClient
          return keys;
       }
 
-      public TimeSpan? GetTimeToLive ( string key )
+      public TimeSpan? GetTimeToLive(string key)
       {
-         ICacheClient client = FindClient( key );
-         if ( client is ICacheClientExtended )
-            return ( ( ICacheClientExtended )client ).GetTimeToLive( key );
+         ICacheClient client = FindClient(key);
+         if (client is ICacheClientExtended)
+            return ((ICacheClientExtended)client).GetTimeToLive(key);
          else
             return null;
       }
 
-      public long Increment ( string key, uint amount )
+      public long Increment(string key, uint amount)
       {
-         return FindClient( key )
-            .Increment( key, amount );
+         return FindClient(key)
+            .Increment(key, amount);
       }
 
-      public void RegisterRoutedClient ( IRoutedCacheClientRule rule )
+      public bool Remove(string key)
       {
-         if ( rule == null )
-            throw new ArgumentNullException( nameof( rule ) );
-         mRules.Push( rule );
+         return FindClient(key)
+            .Remove(key);
       }
 
-      public bool Remove ( string key )
+      public void RemoveAll(IEnumerable<string> keys)
       {
-         return FindClient( key )
-            .Remove( key );
-      }
+         if (keys == null)
+            throw new ArgumentNullException(nameof(keys));
 
-      public void RemoveAll ( IEnumerable<string> keys )
-      {
          PerKeyCacheClientRuleAggregator aggregator
             = new PerKeyCacheClientRuleAggregator();
 
-         aggregator.CollectAll( keys, FindRule );
-
-         foreach ( KeyValuePair<Guid, IList<string>> keysForClient in aggregator.KeysForCacheClient )
+         try
          {
-            ICacheClient client = aggregator
-               .CacheClients[ keysForClient.Key ];
+            //The naive approach would be to find the cache client for each key
+            // then issue a Remove() call for that key and value,
+            // but that won't use any optimisation a cache client might have for bulk operations.
+            //Issuing a RemoveAll() for each client with the given set of values, doesn't work either,
+            // since that would bypass any routing.
+            //So, we need to see first which key by which client can be resolved,
+            // and then issue a RemoveAll() on each client using only the subset of keys
+            // it can resolve
 
-            client.RemoveAll( keysForClient.Value );
+            aggregator.CollectAll(keys, FindRule);
+
+            foreach (KeyValuePair<Guid, IList<string>> keysForClient in aggregator.KeysForCacheClient)
+            {
+               ICacheClient client = aggregator
+                  .CacheClients[keysForClient.Key];
+
+               client.RemoveAll(keysForClient.Value);
+            }
          }
-
-         aggregator.Clear();
+         finally
+         {
+            aggregator.Clear();
+         }
       }
 
-      public bool Replace<T> ( string key, T value )
+      public bool Replace<T>(string key, T value)
       {
-         return FindClient( key )
-            .Replace<T>( key, value );
+         return FindClient(key)
+            .Replace<T>(key, value);
       }
 
-      public bool Replace<T> ( string key, T value, TimeSpan expiresIn )
+      public bool Replace<T>(string key, T value, TimeSpan expiresIn)
       {
-         return FindClient( key )
-            .Replace<T>( key, value, expiresIn );
+         return FindClient(key)
+            .Replace<T>(key, value, expiresIn);
       }
 
-      public bool Replace<T> ( string key, T value, DateTime expiresAt )
+      public bool Replace<T>(string key, T value, DateTime expiresAt)
       {
-         return FindClient( key )
-            .Replace<T>( key, value, expiresAt );
+         return FindClient(key)
+            .Replace<T>(key, value, expiresAt);
       }
 
-      public bool Set<T> ( string key, T value )
+      public bool Set<T>(string key, T value)
       {
-         return FindClient( key )
-            .Set<T>( key, value );
+         return FindClient(key)
+            .Set<T>(key, value);
       }
 
-      public bool Set<T> ( string key, T value, TimeSpan expiresIn )
+      public bool Set<T>(string key, T value, TimeSpan expiresIn)
       {
-         return FindClient( key )
-            .Set<T>( key, value, expiresIn );
+         return FindClient(key)
+            .Set<T>(key, value, expiresIn);
       }
 
-      public bool Set<T> ( string key, T value, DateTime expiresAt )
+      public bool Set<T>(string key, T value, DateTime expiresAt)
       {
-         return FindClient( key )
-            .Set<T>( key, value, expiresAt );
+         return FindClient(key)
+            .Set<T>(key, value, expiresAt);
       }
 
-      public void SetAll<T> ( IDictionary<string, T> values )
+      public void SetAll<T>(IDictionary<string, T> values)
       {
+         if (values == null)
+            throw new ArgumentNullException(nameof(values));
+
          PerKeyCacheClientRuleAggregator aggregator
             = new PerKeyCacheClientRuleAggregator();
 
-         aggregator.CollectAll( values.Keys, FindRule );
-
-         foreach ( KeyValuePair<Guid, IList<string>> keysForClient in aggregator.KeysForCacheClient )
+         try
          {
-            ICacheClient client =
-               aggregator.CacheClients[ keysForClient.Key ];
+            //The naive approach would be to find the cache client for each key
+            // then issue a Set() call for that key and value,
+            // but that won't use any optimisation a cache client might have for bulk operations.
+            //Issuing a SetAll() for each client with the given set of values, doesn't work either,
+            // since that would bypass any routing.
+            //So, we need to see first which key by which client can be resolved,
+            // and then issue a SetAll() on each client using only the subset of keys
+            // it can resolve
 
-            IDictionary<string, T> clientValues = values
-               .Where( v => keysForClient.Value.Contains( v.Key ) )
-               .ToDictionary( v => v.Key, v => v.Value );
+            aggregator.CollectAll(values.Keys, FindRule);
 
-            client.SetAll( clientValues );
+            foreach (KeyValuePair<Guid, IList<string>> keysForClient in aggregator.KeysForCacheClient)
+            {
+               ICacheClient client =
+                  aggregator.CacheClients[keysForClient.Key];
+
+               IDictionary<string, T> clientValues = values
+                  .Where(v => keysForClient.Value.Contains(v.Key))
+                  .ToDictionary(v => v.Key, v => v.Value);
+
+               client.SetAll(clientValues);
+            }
          }
-
-         aggregator.Clear();
+         finally
+         {
+            aggregator.Clear();
+         }
       }
 
-      private void DeRegisterAllClients ()
+      public IRoutedCacheClient PushClientWithRule(IRoutedCacheClientRule rule)
       {
-         mRules.Clear();
+         if (rule == null)
+            throw new ArgumentNullException(nameof(rule));
+
+         mRules.Push(rule);
+         return this;
       }
 
-      public void Dispose ()
+      public void ClearRules()
       {
-         DeRegisterAllClients();
+         while (mRules.Count > 1)
+            mRules.Pop();
+      }
+
+      protected void Dispose(bool disposing)
+      {
+         if (disposing)
+         {
+            while (mRules.Count > 0)
+            {
+               IRoutedCacheClientRule rule = mRules.Pop();
+               rule.Client.Dispose();
+            }
+         }
+      }
+
+      public void Dispose()
+      {
+         Dispose(true);
+         GC.SuppressFinalize(this);
       }
    }
 }

@@ -29,13 +29,20 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
+using ServiceStack.Caching;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
-namespace LVD.ServiceStack.RoutedCacheClient
+namespace LVD.ServiceStackRoutedCacheClient
 {
-   class ServiceStackSessionKeyCacheClientRule
+   public class ServiceStackSessionKeyCacheClientRule : KeyStartsWithStringCacheClientRule
    {
+      public ServiceStackSessionKeyCacheClientRule(ICacheClient cacheClient)
+         : base(cacheClient,
+              StringComparison.InvariantCultureIgnoreCase,
+              "urn:iauthsession:",
+              "sess:")
+      {
+         return;
+      }
    }
 }

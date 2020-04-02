@@ -29,35 +29,21 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using ServiceStack.Caching;
 
-namespace LiveLMS.RoutedCacheClient
+namespace LVD.ServiceStackRoutedCacheClient
 {
-   public class AllwaysTrueCacheClientRule : IRoutedCacheClientRule
+   public class AllwaysTrueCacheClientRule : BaseCacheClientRule
    {
-      private ICacheClient mClient;
-
-      private Guid mId = Guid.NewGuid();
-
-      public AllwaysTrueCacheClientRule ( ICacheClient cacheClient )
+      public AllwaysTrueCacheClientRule(ICacheClient client)
+         : base(client)
       {
-         if ( cacheClient == null )
-            throw new ArgumentNullException( nameof( cacheClient ) );
-         mClient = cacheClient;
+         return;
       }
 
-      public bool Matches ( string key )
+      public override bool Matches(string key)
       {
          return true;
       }
-
-      public ICacheClient Client => mClient;
-
-      public Guid Id => mId;
    }
 }

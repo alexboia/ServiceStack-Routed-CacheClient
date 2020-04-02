@@ -36,7 +36,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace LiveLMS.RoutedCacheClient
+namespace LVD.ServiceStackRoutedCacheClient
 {
    public class PerKeyCacheClientRuleAggregator
    {
@@ -46,30 +46,30 @@ namespace LiveLMS.RoutedCacheClient
       private IDictionary<Guid, ICacheClient> mCacheClients =
          new Dictionary<Guid, ICacheClient>();
 
-      public void CollectAll ( IEnumerable<string> keys, Func<string, IRoutedCacheClientRule> ruleSelector )
+      public void CollectAll(IEnumerable<string> keys, Func<string, IRoutedCacheClientRule> ruleSelector)
       {
-         foreach ( string key in keys )
+         foreach (string key in keys)
          {
-            IRoutedCacheClientRule rule = ruleSelector.Invoke( key );
-            Collect( key, rule );
+            IRoutedCacheClientRule rule = ruleSelector.Invoke(key);
+            Collect(key, rule);
          }
       }
 
-      public void Collect ( string key, IRoutedCacheClientRule rule )
+      public void Collect(string key, IRoutedCacheClientRule rule)
       {
          IList<string> keysForClient;
 
-         if ( !mKeysForCacheClient.TryGetValue( rule.Id, out keysForClient ) )
+         if (!mKeysForCacheClient.TryGetValue(rule.Id, out keysForClient))
          {
             keysForClient = new List<string>();
-            mKeysForCacheClient[ rule.Id ] = keysForClient;
-            mCacheClients[ rule.Id ] = rule.Client;
+            mKeysForCacheClient[rule.Id] = keysForClient;
+            mCacheClients[rule.Id] = rule.Client;
          }
 
-         keysForClient.Add( key );
+         keysForClient.Add(key);
       }
 
-      public void Clear ()
+      public void Clear()
       {
          mKeysForCacheClient.Clear();
          mCacheClients.Clear();

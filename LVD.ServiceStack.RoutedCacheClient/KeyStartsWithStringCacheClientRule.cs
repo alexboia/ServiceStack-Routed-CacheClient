@@ -29,56 +29,42 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
+using ServiceStack.Caching;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using ServiceStack.Caching;
 
-namespace LiveLMS.RoutedCacheClient
+namespace LVD.ServiceStackRoutedCacheClient
 {
-   public class KeyStartsWithStringCacheClientRule : IRoutedCacheClientRule
+   public class KeyStartsWithStringCacheClientRule : BaseCacheClientRule
    {
       private List<string> mTokens = new List<string>();
 
-      private ICacheClient mCacheClient;
-
-      private Guid mId = Guid.NewGuid();
-
       private StringComparison mStringComparisonMode;
 
-      public KeyStartsWithStringCacheClientRule ( ICacheClient cacheClient,
+      public KeyStartsWithStringCacheClientRule(ICacheClient cacheClient,
          StringComparison stringComparisonMode,
-         params string[] tokens )
+         params string[] tokens)
+         : base(cacheClient)
       {
-         if ( tokens == null || tokens.Length == 0 )
-            throw new ArgumentNullException( nameof( tokens ) );
+         if (tokens == null || tokens.Length == 0)
+            throw new ArgumentNullException(nameof(tokens));
 
-         if ( cacheClient == null )
-            throw new ArgumentNullException( nameof( cacheClient ) );
-
-         mTokens.AddRange( tokens );
-         mCacheClient = cacheClient;
+         mTokens.AddRange(tokens);
          mStringComparisonMode = stringComparisonMode;
       }
 
-      public bool Matches ( string key )
+      public override bool Matches(string key)
       {
-         if ( string.IsNullOrWhiteSpace( key ) )
-            throw new ArgumentNullException( nameof( key ) );
+         if (string.IsNullOrWhiteSpace(key))
+            throw new ArgumentNullException(nameof(key));
 
-         foreach ( string token in mTokens )
-            if ( key.StartsWith( token, mStringComparisonMode ) )
+         foreach (string token in mTokens)
+            if (key.StartsWith(token, mStringComparisonMode))
                return true;
 
          return false;
       }
 
-      public ICacheClient Client => mCacheClient;
-
       public StringComparison StringComparisonMode => mStringComparisonMode;
-
-      public Guid Id => mId;
    }
 }

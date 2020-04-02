@@ -36,7 +36,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace LiveLMS.RoutedCacheClient
+namespace LVD.ServiceStackRoutedCacheClient
 {
    public interface IRoutedCacheClientRule
    {
