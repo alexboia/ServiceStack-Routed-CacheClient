@@ -17,7 +17,7 @@ whilst continuing to make use of the standard `MemoryCacheClient `.
 
 ## How to use
 
-### 1. Add namespace referance;
+### 1. Add namespace referance
 
 `using LVD.ServiceStackRoutedCacheClient`.
 
@@ -46,7 +46,7 @@ routedCacheClient.PushClientWithRule(new KeyStartsWithStringCacheClientRule(ormL
 Or simpler, using `PushServiceStackSessionCacheClient()`, which automatically registers your provided cache client
 with a `KeyStartsWithStringCacheClientRule` and the above prefixues: `urn:iauthsession:` and `sess:`.
 
-```charp
+```csharp
 OrmLiteCacheClient<CacheEntry> ormLiteCacheClient =
     new OrmLiteCacheClient<CacheEntry>();
 
