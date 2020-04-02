@@ -6,3 +6,5 @@ tools
 *.suo
 aspnet_client
 /db/*.bak
+*.nupkg
+*.nuspec

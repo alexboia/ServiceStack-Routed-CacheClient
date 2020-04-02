@@ -1,12 +1,19 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net472</TargetFrameworks>
-    <RootNamespace>LVD.ServiceStackRoutedCacheClient</RootNamespace>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFrameworks>netstandard2.0;net472</TargetFrameworks>
+		<RootNamespace>LVD.ServiceStackRoutedCacheClient</RootNamespace>
+		<RepositoryUrl>https://github.com/alexboia/ServiceStack-Routed-CacheClient</RepositoryUrl>
+		<PackageLicenseUrl></PackageLicenseUrl>
+		<PackageTags>servicestack,cache,cache-client,net-framework,netcore2,netcore,netstandard20,netstandard</PackageTags>
+		<PackageProjectUrl>https://github.com/alexboia/ServiceStack-Routed-CacheClient</PackageProjectUrl>
+		<Copyright>2020, Alexandru BOIA</Copyright>
+		<PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+		<PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="ServiceStack.Interfaces" Version="5.4.0" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="ServiceStack.Interfaces" Version="5.4.0" />
+	</ItemGroup>
 
 </Project>
