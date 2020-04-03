@@ -44,7 +44,7 @@ routedCacheClient.PushClientWithRule(new KeyStartsWithStringCacheClientRule(ormL
 ```
 
 Or simpler, using `PushServiceStackSessionCacheClient()`, which automatically registers your provided cache client
-with a `KeyStartsWithStringCacheClientRule` and the above prefixues: `urn:iauthsession:` and `sess:`.
+with a `KeyStartsWithStringCacheClientRule` and the above prefixes: `urn:iauthsession:` and `sess:`.
 
 ```csharp
 OrmLiteCacheClient<CacheEntry> ormLiteCacheClient =

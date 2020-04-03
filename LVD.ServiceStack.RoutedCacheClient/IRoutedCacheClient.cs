@@ -43,5 +43,7 @@ namespace LVD.ServiceStackRoutedCacheClient
       IRoutedCacheClient PushClientWithRule(IRoutedCacheClientRule rule);
 
       void ClearRules();
+
+      int RulesCount { get; }
    }
 }

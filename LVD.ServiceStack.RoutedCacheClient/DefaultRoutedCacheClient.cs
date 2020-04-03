@@ -349,5 +349,7 @@ namespace LVD.ServiceStackRoutedCacheClient
          Dispose(true);
          GC.SuppressFinalize(this);
       }
+
+      public int RulesCount => mRules.Count;
    }
 }
