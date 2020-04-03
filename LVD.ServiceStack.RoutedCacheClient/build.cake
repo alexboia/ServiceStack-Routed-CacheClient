@@ -42,7 +42,9 @@ Task("LVDRCC-Push")
 	{
 		DotNetCoreNuGetPush("LVD.ServiceStack.RoutedCacheClient.*.nupkg", new DotNetCoreNuGetPushSettings()
 		{
-			Source = "https://api.nuget.org/v3/index.json"
+			Source = "https://api.nuget.org/v3/index.json",
+			IgnoreSymbols = true,
+			DiagnosticOutput = true
 		});
 
 		DeleteFiles("./*.nupkg");

@@ -15,6 +15,17 @@ The main issue for me was (and possibly many others) that I could not register
 a different cache client for session storage (say, `OrmLiteCacheClient`), 
 whilst continuing to make use of the standard `MemoryCacheClient `.  
 
+## Installation
+
+Available as a NuGet package, [here](https://www.nuget.org/packages/LVD.ServiceStack.RoutedCacheClient/);
+
+### Package Manager
+
+`Install-Package LVD.ServiceStack.RoutedCacheClient -Version 1.0.0`
+
+### .NET CLI
+`dotnet add package LVD.ServiceStack.RoutedCacheClient --version 1.0.0`
+
 ## How to use
 
 ### 1. Add namespace referance
