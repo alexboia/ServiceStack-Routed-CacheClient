@@ -64,7 +64,7 @@ OrmLiteCacheClient<CacheEntry> ormLiteCacheClient =
 routedCacheClient.PushServiceStackSessionCacheClient(ormLiteCacheClient);
 ```
 
-### Creating Custom Rules
+### 4. Creating Custom Rules
 
 The library only comes with a handful of rules, but creating your own 
 is as easy as extending the `BaseCacheClientRule` class and providing 
