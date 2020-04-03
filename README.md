@@ -17,13 +17,13 @@ whilst continuing to make use of the standard `MemoryCacheClient `.
 
 ## Installation
 
-Available as a NuGet package, [here](https://www.nuget.org/packages/LVD.ServiceStack.RoutedCacheClient/);
+Available as a NuGet package, [here](https://www.nuget.org/packages/LVD.ServiceStack.RoutedCacheClient/).
 
-### Package Manager
+### Via Package Manager
 
 `Install-Package LVD.ServiceStack.RoutedCacheClient -Version 1.0.0`
 
-### .NET CLI
+### Via .NET CLI
 `dotnet add package LVD.ServiceStack.RoutedCacheClient --version 1.0.0`
 
 ## How to use
@@ -62,6 +62,49 @@ OrmLiteCacheClient<CacheEntry> ormLiteCacheClient =
     new OrmLiteCacheClient<CacheEntry>();
 
 routedCacheClient.PushServiceStackSessionCacheClient(ormLiteCacheClient);
+```
+
+### Creating Custom Rules
+
+The library only comes with a handful of rules, but creating your own 
+is as easy as extending the `BaseCacheClientRule` class and providing 
+an implementation for the `bool Match(string key)` method. 
+
+As an example, here is the implementation of the built-in `KeyStartsWithStringCacheClientRule` rule:
+
+```csharp
+public class KeyStartsWithStringCacheClientRule : BaseCacheClientRule
+{
+    private List<string> mTokens = new List<string>();
+
+    private StringComparison mStringComparisonMode;
+
+    public KeyStartsWithStringCacheClientRule(ICacheClient cacheClient,
+        StringComparison stringComparisonMode,
+        params string[] tokens)
+        : base(cacheClient)
+    {
+        if (tokens == null || tokens.Length == 0)
+        throw new ArgumentNullException(nameof(tokens));
+
+        mTokens.AddRange(tokens);
+        mStringComparisonMode = stringComparisonMode;
+    }
+
+    public override bool Matches(string key)
+    {
+        if (string.IsNullOrWhiteSpace(key))
+        throw new ArgumentNullException(nameof(key));
+
+        foreach (string token in mTokens)
+        if (key.StartsWith(token, mStringComparisonMode))
+            return true;
+
+        return false;
+    }
+
+    public StringComparison StringComparisonMode => mStringComparisonMode;
+}
 ```
 
 ## What's next
