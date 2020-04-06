@@ -107,6 +107,33 @@ public class KeyStartsWithStringCacheClientRule : BaseCacheClientRule
 }
 ```
 
+### 5. Sample project
+
+A sample project has been provided, to see just how this would behave in the real world.  
+Head over to `LVD.ServiceStack.RoutedCacheClient.Example` for the full details, but, in short, it exposes three service endpoints:
+
+- `/set-cache-randomly` - set some cache values using the `Service.Cache` instance;
+- `/set-session-randomly` - set some session values using the `Service.SessionBag` instance;
+- `/list-cache-providers-data` - list all values for each of the cache providers.
+
+The output of `/list-cache-providers-data` looks something like:
+
+```json
+{
+    "cacheProvidersData": {
+        "fallbackCacheClient": {
+            "SampleCacheClientService.randomText": "ef42894b-fbb6-4971-b983-0aea9e88f10a",
+            "SampleCacheClientService2020-04-06 10:51.hitCountsPerMinute": "12",
+            "SampleCacheClientService2020-04-06 10:52.hitCountsPerMinute": "4"
+        },
+        "sessionCacheClient": {
+            "sess:vKQ8aph3Xdp1ro9YqBzK:SampleCacheClientService.sessionRandomText": "e2f581da-ad0c-4896-8b4f-b3646f79bc7e",
+            "sess:vKQ8aph3Xdp1ro9YqBzK:SampleCacheClientService.hitCountsPerSession": "12"
+        }
+    }
+}
+```
+
 ## What's next
 
 As a rough timeline, I would like to see the following happening:
@@ -114,3 +141,10 @@ As a rough timeline, I would like to see the following happening:
 - Refactor things a bit and add some comments, at least for critical areas;
 - Add some more routing rules;
 - Additional automated tests.
+
+## Donate
+
+I put some of my free time into developing and maintaining this plugin.
+If helped you in your projects and you are happy with it, you can...
+
+[![ko-fi](https://www.ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Q5Q01KGLM)
