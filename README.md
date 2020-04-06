@@ -139,7 +139,13 @@ The output of `/list-cache-providers-data` looks something like:
 As a rough timeline, I would like to see the following happening:
 
 - Refactor things a bit and add some comments, at least for critical areas;
-- Add some more routing rules;
+- Add some more routing rules. Here are some of the rules I'm thinking about:
+	- match a regex pattern;
+	- match rules that ends with a given string;
+	- composed rules using basic `AND`/`OR` logical operators.
+- Enhance the API:
+	- would be useful to have a way of listing all the registered cache clients;
+	- allow method chaining when registering cache client rules.
 - Additional automated tests.
 
 ## Donate
