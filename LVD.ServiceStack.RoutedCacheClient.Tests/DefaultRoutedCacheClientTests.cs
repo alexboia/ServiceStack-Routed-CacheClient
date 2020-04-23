@@ -34,6 +34,7 @@ using NUnit.Framework;
 using ServiceStack.Caching;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace LVD.ServiceStackRoutedCacheClient.Tests
 {
@@ -447,7 +448,7 @@ namespace LVD.ServiceStackRoutedCacheClient.Tests
          Assert.NotNull(actualResult);
          CollectionAssert.AreEqual(expectedResult, actualResult);
 
-         fallbackClientMocker.Verify(c => c.GetKeysByPattern(pattern), 
+         fallbackClientMocker.Verify(c => c.GetKeysByPattern(pattern),
             Times.Once);
 
          fallbackClientMocker.VerifyNoOtherCalls();
@@ -481,11 +482,11 @@ namespace LVD.ServiceStackRoutedCacheClient.Tests
 
          IRoutedCacheClient routedCacheClient =
             CreateRoutedCacheClient(fallbackClientMocker.Object,
-               new KeyStartsWithStringCacheClientRule(client1Mocker.Object, 
-                  StringComparison.InvariantCultureIgnoreCase, 
+               new KeyStartsWithStringCacheClientRule(client1Mocker.Object,
+                  StringComparison.InvariantCultureIgnoreCase,
                   Guid.NewGuid().ToString()),
-               new KeyStartsWithStringCacheClientRule(client2Mocker.Object, 
-                  StringComparison.InvariantCultureIgnoreCase, 
+               new KeyStartsWithStringCacheClientRule(client2Mocker.Object,
+                  StringComparison.InvariantCultureIgnoreCase,
                   Guid.NewGuid().ToString()));
 
          IEnumerable<string> actualResult = routedCacheClient.GetKeysByPattern(pattern);
@@ -493,7 +494,7 @@ namespace LVD.ServiceStackRoutedCacheClient.Tests
          Assert.NotNull(actualResult);
          CollectionAssert.AreEquivalent(expectedResult, actualResult);
 
-         fallbackClientMocker.Verify(c => c.GetKeysByPattern(pattern), 
+         fallbackClientMocker.Verify(c => c.GetKeysByPattern(pattern),
             Times.Once);
          client1Mocker.Verify(c => c.GetKeysByPattern(pattern),
             Times.Once);
@@ -503,6 +504,87 @@ namespace LVD.ServiceStackRoutedCacheClient.Tests
          fallbackClientMocker.VerifyNoOtherCalls();
          client1Mocker.VerifyNoOtherCalls();
          client2Mocker.VerifyNoOtherCalls();
+      }
+
+      [Test]
+      [TestCase(0)]
+      [TestCase(1)]
+      [TestCase(5)]
+      [TestCase(10)]
+      public void Test_CanGetRegisteredCacheClients_SameType(int additionalRuleCount)
+      {
+         Mock<ICacheClientExtended> fallbackClientMocker =
+            new Mock<ICacheClientExtended>(MockBehavior.Loose);
+
+         DefaultRoutedCacheClient cacheClient =
+            new DefaultRoutedCacheClient(fallbackClientMocker.Object);
+
+         for (int i = 0; i < additionalRuleCount; i++)
+            cacheClient.PushClientWithRule(new KeyStartsWithStringCacheClientRule(new MockCacheClient1(),
+               StringComparison.InvariantCultureIgnoreCase,
+               $":test{i}"));
+
+         IDictionary<string, ICacheClient> cacheClients = cacheClient
+            .GetRegisteredClients();
+
+         IDictionary<string, ICacheClient> cacheClientsFromExt = cacheClient
+            .GetRegisteredCacheClients();
+
+         CollectionAssert.AreEquivalent(cacheClients,
+            cacheClientsFromExt);
+
+         Assert.AreEqual(additionalRuleCount + 1,
+            cacheClients.Count);
+
+         Assert.AreEqual(additionalRuleCount,
+            cacheClients.Count(r => r.Key.StartsWith("mockCacheClient1")));
+      }
+
+      [Test]
+      [TestCase(0, 0)]
+      [TestCase(0, 1)]
+      [TestCase(1, 0)]
+      [TestCase(0, 5)]
+      [TestCase(5, 0)]
+      [TestCase(1, 5)]
+      [TestCase(5, 1)]
+      [TestCase(5, 10)]
+      [TestCase(10, 5)]
+      public void Test_CanGetRegisteredCacheClients_DifferentTypes(int additionalRuleCount1, int additionalRuleCount2)
+      {
+         Mock<ICacheClientExtended> fallbackClientMocker =
+            new Mock<ICacheClientExtended>(MockBehavior.Loose);
+
+         DefaultRoutedCacheClient cacheClient =
+            new DefaultRoutedCacheClient(fallbackClientMocker.Object);
+
+         for (int i = 0; i < additionalRuleCount1; i++)
+            cacheClient.PushClientWithRule(new KeyStartsWithStringCacheClientRule(new MockCacheClient1(),
+               StringComparison.InvariantCultureIgnoreCase,
+               $":test1{i}"));
+
+         for (int i = 0; i < additionalRuleCount2; i++)
+            cacheClient.PushClientWithRule(new KeyStartsWithStringCacheClientRule(new MockCacheClient2(),
+               StringComparison.InvariantCultureIgnoreCase,
+               $":test2{i}"));
+
+         IDictionary<string, ICacheClient> cacheClients = cacheClient
+            .GetRegisteredClients();
+
+         IDictionary<string, ICacheClient> cacheClientsFromExt = cacheClient
+            .GetRegisteredCacheClients();
+
+         CollectionAssert.AreEquivalent(cacheClients,
+            cacheClientsFromExt);
+
+         Assert.AreEqual(additionalRuleCount1 + additionalRuleCount2 + 1,
+            cacheClients.Count);
+
+         Assert.AreEqual(additionalRuleCount1,
+            cacheClients.Count(r => r.Key.StartsWith("mockCacheClient1")));
+
+         Assert.AreEqual(additionalRuleCount2,
+            cacheClients.Count(r => r.Key.StartsWith("mockCacheClient2")));
       }
 
       private IRoutedCacheClient CreateRoutedCacheClient(ICacheClient fallbackClient, ICacheClient sessionClient, params IRoutedCacheClientRule[] rules)

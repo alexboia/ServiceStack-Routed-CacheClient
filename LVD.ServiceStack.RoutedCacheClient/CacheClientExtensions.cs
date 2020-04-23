@@ -30,20 +30,44 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 using ServiceStack.Caching;
+using System;
 using System.Collections.Generic;
 
 namespace LVD.ServiceStackRoutedCacheClient
 {
-   public interface IRoutedCacheClient : ICacheClientExtended
+   public static class CacheClientExtensions
    {
-      IRoutedCacheClient PushClientWithRule(IRoutedCacheClientRule rule);
+      public static bool IsRoutedCacheClient(this ICacheClient cacheClient)
+      {
+         return cacheClient is IRoutedCacheClient;
+      }
 
-      IRoutedCacheClient ClearRules();
+      public static IDictionary<string, ICacheClient> GetRegisteredCacheClients(this ICacheClient cacheClient)
+      {
+         if (cacheClient == null)
+            throw new ArgumentNullException(nameof(cacheClient));
 
-      IDictionary<string, ICacheClient> GetRegisteredClients();
+         IRoutedCacheClient routedCacheClient = cacheClient
+            as IRoutedCacheClient;
 
-      IEnumerable<IRoutedCacheClientRule> GetRegisteredClientRules();
+         if (routedCacheClient != null)
+            return routedCacheClient.GetRegisteredClients();
+         else
+            throw new Exception($"{nameof(GetRegisteredCacheClients)} is not implemented by {cacheClient.GetType().FullName}"); ;
+      }
 
-      int RulesCount { get; }
+      public static IEnumerable<IRoutedCacheClientRule> GetRegisteredCacheClientRules(this ICacheClient cacheClient)
+      {
+         if (cacheClient == null)
+            throw new ArgumentNullException(nameof(cacheClient));
+
+         IRoutedCacheClient routedCacheClient = cacheClient
+            as IRoutedCacheClient;
+
+         if (routedCacheClient != null)
+            return routedCacheClient.GetRegisteredClientRules();
+         else
+            throw new Exception($"{nameof(GetRegisteredCacheClientRules)} is not implemented by {cacheClient.GetType().FullName}"); ;
+      }
    }
 }

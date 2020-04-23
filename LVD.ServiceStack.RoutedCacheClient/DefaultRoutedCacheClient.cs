@@ -51,16 +51,6 @@ namespace LVD.ServiceStackRoutedCacheClient
          mRules.Push(new AllwaysTrueCacheClientRule(fallbackClient));
       }
 
-      private IRoutedCacheClientRule FindRule(string key)
-      {
-         return mRules.FirstOrDefault(r => r.Matches(key));
-      }
-
-      private ICacheClient FindClient(string key)
-      {
-         return FindRule(key).Client;
-      }
-
       public bool Add<T>(string key, T value)
       {
          return FindClient(key)
@@ -326,10 +316,66 @@ namespace LVD.ServiceStackRoutedCacheClient
          return this;
       }
 
-      public void ClearRules()
+      public IRoutedCacheClient ClearRules()
       {
          while (mRules.Count > 1)
             mRules.Pop();
+
+         return this;
+      }
+
+      public IDictionary<string, ICacheClient> GetRegisteredClients()
+      {
+         Dictionary<string, int> discriminatorMap =
+            new Dictionary<string, int>();
+
+         Dictionary<string, ICacheClient> clientsSnapshot =
+            new Dictionary<string, ICacheClient>();
+
+         foreach (IRoutedCacheClientRule rule in mRules)
+         {
+            string snapshotKey = rule.Name;
+
+            if (clientsSnapshot.ContainsKey(snapshotKey))
+            {
+               int discriminator;
+
+               if (!discriminatorMap.TryGetValue(snapshotKey, out discriminator))
+                  discriminator = 1;
+               else
+                  discriminator++;
+
+               discriminatorMap[snapshotKey] = discriminator;
+
+               snapshotKey = string.Format("{0}_{1}",
+                  snapshotKey,
+                  discriminator);
+            }
+
+            clientsSnapshot[snapshotKey] = rule.Client;
+         }
+
+         return clientsSnapshot;
+      }
+
+      public IEnumerable<IRoutedCacheClientRule> GetRegisteredClientRules()
+      {
+         List<IRoutedCacheClientRule> rulesSnapshot = new List<IRoutedCacheClientRule>();
+
+         foreach (IRoutedCacheClientRule rule in mRules)
+            rulesSnapshot.Add(rule);
+
+         return rulesSnapshot;
+      }
+
+      private IRoutedCacheClientRule FindRule(string key)
+      {
+         return mRules.FirstOrDefault(r => r.Matches(key));
+      }
+
+      private ICacheClient FindClient(string key)
+      {
+         return FindRule(key).Client;
       }
 
       protected void Dispose(bool disposing)

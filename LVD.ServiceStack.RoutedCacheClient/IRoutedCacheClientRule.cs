@@ -44,6 +44,8 @@ namespace LVD.ServiceStackRoutedCacheClient
 
       ICacheClient Client { get; }
 
+      string Name { get; }
+
       Guid Id { get; }
    }
 }
