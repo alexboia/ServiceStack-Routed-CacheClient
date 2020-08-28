@@ -26,20 +26,10 @@ namespace LVD.ServiceStackRoutedCacheClient.Example
 
          IRoutedCacheClient routedCacheClient = new DefaultRoutedCacheClient(fallbackCacheClient);
 
-         //TODO: allow listing of registered cache clients 
-         //    for an IRoutedCacheClient
-         //TODO: use method chaining when registering cache client rules 
-         //    to an IRoutedCacheClient
          routedCacheClient.PushServiceStackSessionCacheClient(sessionCacheClient);
 
          container.Register<ICacheClient>(routedCacheClient);
          container.Register<ICacheClientExtended>(routedCacheClient);
-
-         container.Register<IDictionary<string, ICacheClient>>(new Dictionary<string, ICacheClient>()
-         {
-            { "fallbackCacheClient", fallbackCacheClient },
-            { "sessionCacheClient", sessionCacheClient }
-         });
 
          //Register session feature
          Plugins.Add(new SessionFeature());

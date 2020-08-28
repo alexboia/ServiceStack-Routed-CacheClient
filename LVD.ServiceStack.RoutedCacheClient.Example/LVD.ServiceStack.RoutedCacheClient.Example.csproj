@@ -10,10 +10,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="LVD.ServiceStack.RoutedCacheClient" Version="1.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Microsoft.AspNetCore.Razor.Design" Version="2.1.2" PrivateAssets="All" />
     <PackageReference Include="ServiceStack" Version="5.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\LVD.ServiceStack.RoutedCacheClient\LVD.ServiceStack.RoutedCacheClient.csproj" />
   </ItemGroup>
 
 </Project>

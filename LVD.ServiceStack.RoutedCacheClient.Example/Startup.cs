@@ -34,6 +34,7 @@ namespace LVD.ServiceStackRoutedCacheClient.Example
             app.UseDeveloperExceptionPage();
          }
 
+         Licensing.RegisterLicenseFromFile("./license-ss.txt");
          app.UseServiceStack(new AppHost()
          {
             AppSettings = new NetCoreAppSettings(Configuration)

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using ServiceStack;
+using LVD.ServiceStackRoutedCacheClient;
 using LVD.ServiceStackRoutedCacheClient.Example.ServiceModel;
 using ServiceStack.Caching;
 
@@ -44,11 +45,13 @@ namespace LVD.ServiceStackRoutedCacheClient.Example.ServiceInterface
 
       public object Get(ListAllCacheClientRules request)
       {
-         ListAllCacheClientRulesResponse response = new ListAllCacheClientRulesResponse();
+         ListAllCacheClientRulesResponse response =
+            new ListAllCacheClientRulesResponse();
 
-         foreach (KeyValuePair<string, ICacheClient> clientInfo in CacheClientRegistry)
+         foreach (KeyValuePair<string, ICacheClient> clientInfo in Cache.GetRegisteredCacheClients())
          {
             Dictionary<string, string> values = new Dictionary<string, string>();
+
             foreach (string key in clientInfo.Value.GetAllKeys())
                values.Add(key, clientInfo.Value.Get<string>(key));
 
@@ -57,7 +60,5 @@ namespace LVD.ServiceStackRoutedCacheClient.Example.ServiceInterface
 
          return response;
       }
-
-      public IDictionary<string, ICacheClient> CacheClientRegistry { get; set; }
    }
 }
