@@ -35,39 +35,39 @@ using System.Collections.Generic;
 
 namespace LVD.ServiceStackRoutedCacheClient
 {
-   public static class CacheClientExtensions
-   {
-      public static bool IsRoutedCacheClient(this ICacheClient cacheClient)
-      {
-         return cacheClient is IRoutedCacheClient;
-      }
+	public static class CacheClientExtensions
+	{
+		public static bool IsRoutedCacheClient ( this ICacheClient cacheClient )
+		{
+			return cacheClient is IRoutedCacheClient;
+		}
 
-      public static IDictionary<string, ICacheClient> GetRegisteredCacheClients(this ICacheClient cacheClient)
-      {
-         if (cacheClient == null)
-            throw new ArgumentNullException(nameof(cacheClient));
+		public static IDictionary<string, ICacheClient> GetRegisteredCacheClients ( this ICacheClient cacheClient )
+		{
+			if ( cacheClient == null )
+				throw new ArgumentNullException( nameof( cacheClient ) );
 
-         IRoutedCacheClient routedCacheClient = cacheClient
-            as IRoutedCacheClient;
+			IRoutedCacheClient routedCacheClient = cacheClient
+			   as IRoutedCacheClient;
 
-         if (routedCacheClient != null)
-            return routedCacheClient.GetRegisteredClients();
-         else
-            throw new Exception($"{nameof(GetRegisteredCacheClients)} is not implemented by {cacheClient.GetType().FullName}"); ;
-      }
+			if ( routedCacheClient != null )
+				return routedCacheClient.GetRegisteredClients();
+			else
+				throw new Exception( $"{nameof( GetRegisteredCacheClients )} is not implemented by {cacheClient.GetType().FullName}" ); ;
+		}
 
-      public static IEnumerable<IRoutedCacheClientRule> GetRegisteredCacheClientRules(this ICacheClient cacheClient)
-      {
-         if (cacheClient == null)
-            throw new ArgumentNullException(nameof(cacheClient));
+		public static IEnumerable<IRoutedCacheClientRule> GetRegisteredCacheClientRules ( this ICacheClient cacheClient )
+		{
+			if ( cacheClient == null )
+				throw new ArgumentNullException( nameof( cacheClient ) );
 
-         IRoutedCacheClient routedCacheClient = cacheClient
-            as IRoutedCacheClient;
+			IRoutedCacheClient routedCacheClient = cacheClient
+			   as IRoutedCacheClient;
 
-         if (routedCacheClient != null)
-            return routedCacheClient.GetRegisteredClientRules();
-         else
-            throw new Exception($"{nameof(GetRegisteredCacheClientRules)} is not implemented by {cacheClient.GetType().FullName}"); ;
-      }
-   }
+			if ( routedCacheClient != null )
+				return routedCacheClient.GetRegisteredClientRules();
+			else
+				throw new Exception( $"{nameof( GetRegisteredCacheClientRules )} is not implemented by {cacheClient.GetType().FullName}" ); ;
+		}
+	}
 }
