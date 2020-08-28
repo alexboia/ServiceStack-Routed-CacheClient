@@ -34,15 +34,21 @@ using System;
 
 namespace LVD.ServiceStackRoutedCacheClient
 {
-   public class ServiceStackSessionKeyCacheClientRule : KeyStartsWithStringCacheClientRule
-   {
-      public ServiceStackSessionKeyCacheClientRule(ICacheClient cacheClient)
-         : base(cacheClient,
-              StringComparison.InvariantCultureIgnoreCase,
-              "urn:iauthsession:",
-              "sess:")
-      {
-         return;
-      }
-   }
+	/// <summary>
+	/// This rule matches keys that represent ServiceStack session data, i.e. they start with
+	///		- "urn:iauthsession:"
+	///			OR
+	///		- "sess:"
+	/// </summary>
+	public class ServiceStackSessionKeyCacheClientRule : KeyStartsWithStringCacheClientRule
+	{
+		public ServiceStackSessionKeyCacheClientRule ( ICacheClient cacheClient )
+		   : base( cacheClient,
+				StringComparison.InvariantCultureIgnoreCase,
+				"urn:iauthsession:",
+				"sess:" )
+		{
+			return;
+		}
+	}
 }

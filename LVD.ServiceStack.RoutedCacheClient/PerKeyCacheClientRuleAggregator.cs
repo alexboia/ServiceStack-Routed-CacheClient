@@ -38,47 +38,87 @@ using System.Threading.Tasks;
 
 namespace LVD.ServiceStackRoutedCacheClient
 {
-   public class PerKeyCacheClientRuleAggregator
-   {
-      private IDictionary<Guid, IList<string>> mKeysForCacheClient =
-         new Dictionary<Guid, IList<string>>();
+	/// <summary>
+	/// This is a small utility class used to assign 
+	///		cache client rules to cache keys.
+	/// Additionally, it also produces a rule ID to cache client map 
+	///		(that is which cache client is used for which rule).
+	/// </summary>
+	public class PerKeyCacheClientRuleAggregator
+	{
+		/// <summary>
+		/// Holds cache keys for rule IDs
+		/// </summary>
+		private IDictionary<Guid, IList<string>> mKeysForCacheClient =
+		   new Dictionary<Guid, IList<string>>();
 
-      private IDictionary<Guid, ICacheClient> mCacheClients =
-         new Dictionary<Guid, ICacheClient>();
+		/// <summary>
+		/// Holds cache clients for rule IDs
+		/// </summary>
+		private IDictionary<Guid, ICacheClient> mCacheClients =
+		   new Dictionary<Guid, ICacheClient>();
 
-      public void CollectAll(IEnumerable<string> keys, Func<string, IRoutedCacheClientRule> ruleSelector)
-      {
-         foreach (string key in keys)
-         {
-            IRoutedCacheClientRule rule = ruleSelector.Invoke(key);
-            Collect(key, rule);
-         }
-      }
+		/// <summary>
+		/// Given a collection of keys and a function that returns a cache client rule for a given key
+		///		(that is a rule for which .Match() applied to that key returns true)
+		///		assigns a list of keys for each cache client rule.
+		/// </summary>
+		/// <param name="keys">The collection of keys</param>
+		/// <param name="ruleSelector">Maps each key to a matching cache client rule</param>
+		public void CollectAll ( IEnumerable<string> keys, Func<string, IRoutedCacheClientRule> ruleSelector )
+		{
+			if ( keys == null )
+				throw new ArgumentNullException( nameof( keys ) );
 
-      public void Collect(string key, IRoutedCacheClientRule rule)
-      {
-         IList<string> keysForClient;
+			if ( ruleSelector == null )
+				throw new ArgumentNullException( nameof( ruleSelector ) );
 
-         if (!mKeysForCacheClient.TryGetValue(rule.Id, out keysForClient))
-         {
-            keysForClient = new List<string>();
-            mKeysForCacheClient[rule.Id] = keysForClient;
-            mCacheClients[rule.Id] = rule.Client;
-         }
+			foreach ( string key in keys )
+			{
+				IRoutedCacheClientRule rule = ruleSelector.Invoke( key );
+				if ( rule != null )
+					Collect( key, rule );
+			}
+		}
 
-         keysForClient.Add(key);
-      }
+		/// <summary>
+		/// Assigns a key to the given rule.
+		/// </summary>
+		/// <param name="key">The key</param>
+		/// <param name="rule">The rule</param>
+		public void Collect ( string key, IRoutedCacheClientRule rule )
+		{
+			if ( string.IsNullOrEmpty( key ) )
+				throw new ArgumentNullException( nameof( key ) );
 
-      public void Clear()
-      {
-         mKeysForCacheClient.Clear();
-         mCacheClients.Clear();
-      }
+			if ( rule == null )
+				throw new ArgumentNullException( nameof( rule ) );
 
-      public IDictionary<Guid, IList<string>> KeysForCacheClient
-         => mKeysForCacheClient;
+			IList<string> keysForClient;
 
-      public IDictionary<Guid, ICacheClient> CacheClients
-         => mCacheClients;
-   }
+			if ( !mKeysForCacheClient.TryGetValue( rule.Id, out keysForClient ) )
+			{
+				keysForClient = new List<string>();
+				mKeysForCacheClient[ rule.Id ] = keysForClient;
+				mCacheClients[ rule.Id ] = rule.Client;
+			}
+
+			keysForClient.Add( key );
+		}
+
+		/// <summary>
+		/// Resets all the collected data
+		/// </summary>
+		public void Clear ()
+		{
+			mKeysForCacheClient.Clear();
+			mCacheClients.Clear();
+		}
+
+		public IDictionary<Guid, IList<string>> KeysForCacheClient
+		   => mKeysForCacheClient;
+
+		public IDictionary<Guid, ICacheClient> CacheClients
+		   => mCacheClients;
+	}
 }
