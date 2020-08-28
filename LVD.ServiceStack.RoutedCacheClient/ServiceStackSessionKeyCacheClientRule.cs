@@ -29,6 +29,7 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
+using LVD.ServiceStackRoutedCacheClient.Conditions;
 using ServiceStack.Caching;
 using System;
 
@@ -40,13 +41,10 @@ namespace LVD.ServiceStackRoutedCacheClient
 	///			OR
 	///		- "sess:"
 	/// </summary>
-	public class ServiceStackSessionKeyCacheClientRule : KeyStartsWithStringCacheClientRule
+	public class ServiceStackSessionKeyCacheClientRule : GenericConditionBasedCacheClientRule
 	{
 		public ServiceStackSessionKeyCacheClientRule ( ICacheClient cacheClient )
-		   : base( cacheClient,
-				StringComparison.InvariantCultureIgnoreCase,
-				"urn:iauthsession:",
-				"sess:" )
+		   : base( cacheClient, new ServiceStackSessionKeyCacheClientRuleCondition() )
 		{
 			return;
 		}

@@ -48,7 +48,7 @@ namespace LVD.ServiceStackRoutedCacheClient
 			if ( fallbackClient == null )
 				throw new ArgumentNullException( nameof( fallbackClient ) );
 
-			mRules.Push( new AllwaysTrueCacheClientRule( fallbackClient ) );
+			mRules.Push( new AlwaysTrueCacheClientRule( fallbackClient ) );
 		}
 
 		public bool Add<T> ( string key, T value )

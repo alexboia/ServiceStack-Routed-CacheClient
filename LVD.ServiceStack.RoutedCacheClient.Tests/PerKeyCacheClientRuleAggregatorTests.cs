@@ -67,7 +67,7 @@ namespace LVD.ServiceStackRoutedCacheClient.Tests
                new Mock<ICacheClient>(MockBehavior.Loose);
 
             IRoutedCacheClientRule rule =
-               new AllwaysTrueCacheClientRule(cacheClientMocker.Object);
+               new AlwaysTrueCacheClientRule( cacheClientMocker.Object);
 
             expectedkeysForCacheClients[rule.Id] = new List<string>();
             rules.Add(rule);

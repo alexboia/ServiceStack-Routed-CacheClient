@@ -29,28 +29,26 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
-using LVD.ServiceStackRoutedCacheClient.Conditions;
-using ServiceStack.Caching;
 using System;
 using System.Collections.Generic;
+using System.Text;
 
-namespace LVD.ServiceStackRoutedCacheClient
+namespace LVD.ServiceStackRoutedCacheClient.Conditions
 {
-	public class KeyStartsWithStringCacheClientRule : GenericConditionBasedCacheClientRule
+	public class ServiceStackSessionKeyCacheClientRuleCondition : IRoutedCacheClientRuleCondition
 	{
-		public KeyStartsWithStringCacheClientRule ( ICacheClient cacheClient,
-			KeyStartsWithStringCacheClientRuleCondition condition )
-			: base( cacheClient, condition )
+		private KeyStartsWithStringCacheClientRuleCondition mInnerCondition;
+
+		public ServiceStackSessionKeyCacheClientRuleCondition ()
 		{
-			return;
+			mInnerCondition = new KeyStartsWithStringCacheClientRuleCondition( StringComparison.InvariantCultureIgnoreCase,
+				"urn:iauthsession:",
+				"sess:" );
 		}
 
-		public KeyStartsWithStringCacheClientRule ( ICacheClient cacheClient,
-		   StringComparison stringComparisonMode,
-		   params string[] tokens )
-		   : this( cacheClient, new KeyStartsWithStringCacheClientRuleCondition( stringComparisonMode, tokens ) )
+		public bool Matches ( string key )
 		{
-			return;
+			return mInnerCondition.Matches( key );
 		}
 	}
 }

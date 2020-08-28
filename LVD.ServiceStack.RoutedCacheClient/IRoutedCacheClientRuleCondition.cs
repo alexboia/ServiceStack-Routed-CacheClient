@@ -29,28 +29,14 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
-using LVD.ServiceStackRoutedCacheClient.Conditions;
-using ServiceStack.Caching;
 using System;
 using System.Collections.Generic;
+using System.Text;
 
 namespace LVD.ServiceStackRoutedCacheClient
 {
-	public class KeyStartsWithStringCacheClientRule : GenericConditionBasedCacheClientRule
+	public interface IRoutedCacheClientRuleCondition
 	{
-		public KeyStartsWithStringCacheClientRule ( ICacheClient cacheClient,
-			KeyStartsWithStringCacheClientRuleCondition condition )
-			: base( cacheClient, condition )
-		{
-			return;
-		}
-
-		public KeyStartsWithStringCacheClientRule ( ICacheClient cacheClient,
-		   StringComparison stringComparisonMode,
-		   params string[] tokens )
-		   : this( cacheClient, new KeyStartsWithStringCacheClientRuleCondition( stringComparisonMode, tokens ) )
-		{
-			return;
-		}
+		bool Matches ( string key );
 	}
 }

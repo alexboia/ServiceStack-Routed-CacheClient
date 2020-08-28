@@ -29,28 +29,40 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
-using LVD.ServiceStackRoutedCacheClient.Conditions;
-using ServiceStack.Caching;
 using System;
 using System.Collections.Generic;
+using System.Text;
 
-namespace LVD.ServiceStackRoutedCacheClient
+namespace LVD.ServiceStackRoutedCacheClient.Conditions
 {
-	public class KeyStartsWithStringCacheClientRule : GenericConditionBasedCacheClientRule
+	public class KeyStartsWithStringCacheClientRuleCondition : IRoutedCacheClientRuleCondition
 	{
-		public KeyStartsWithStringCacheClientRule ( ICacheClient cacheClient,
-			KeyStartsWithStringCacheClientRuleCondition condition )
-			: base( cacheClient, condition )
+		private List<string> mTokens = new List<string>();
+
+		private StringComparison mStringComparisonMode;
+
+		public KeyStartsWithStringCacheClientRuleCondition ( StringComparison stringComparisonMode,
+		   params string[] tokens )
 		{
-			return;
+			if ( tokens == null || tokens.Length == 0 )
+				throw new ArgumentNullException( nameof( tokens ) );
+
+			mTokens.AddRange( tokens );
+			mStringComparisonMode = stringComparisonMode;
 		}
 
-		public KeyStartsWithStringCacheClientRule ( ICacheClient cacheClient,
-		   StringComparison stringComparisonMode,
-		   params string[] tokens )
-		   : this( cacheClient, new KeyStartsWithStringCacheClientRuleCondition( stringComparisonMode, tokens ) )
+		public bool Matches ( string key )
 		{
-			return;
+			if ( string.IsNullOrWhiteSpace( key ) )
+				throw new ArgumentNullException( nameof( key ) );
+
+			foreach ( string token in mTokens )
+				if ( key.StartsWith( token, mStringComparisonMode ) )
+					return true;
+
+			return false;
 		}
+
+		public StringComparison StringComparisonMode => mStringComparisonMode;
 	}
 }

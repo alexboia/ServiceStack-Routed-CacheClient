@@ -29,28 +29,33 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
-using LVD.ServiceStackRoutedCacheClient.Conditions;
 using ServiceStack.Caching;
 using System;
 using System.Collections.Generic;
+using System.Text;
 
 namespace LVD.ServiceStackRoutedCacheClient
 {
-	public class KeyStartsWithStringCacheClientRule : GenericConditionBasedCacheClientRule
+	public class GenericConditionBasedCacheClientRule : BaseCacheClientRule
 	{
-		public KeyStartsWithStringCacheClientRule ( ICacheClient cacheClient,
-			KeyStartsWithStringCacheClientRuleCondition condition )
-			: base( cacheClient, condition )
+		private IRoutedCacheClientRuleCondition mCondition;
+
+		public GenericConditionBasedCacheClientRule ( ICacheClient cacheClient, IRoutedCacheClientRuleCondition condition )
+			: base( cacheClient )
 		{
-			return;
+			mCondition = condition
+				?? throw new ArgumentNullException( nameof( condition ) );
 		}
 
-		public KeyStartsWithStringCacheClientRule ( ICacheClient cacheClient,
-		   StringComparison stringComparisonMode,
-		   params string[] tokens )
-		   : this( cacheClient, new KeyStartsWithStringCacheClientRuleCondition( stringComparisonMode, tokens ) )
+		public override bool Matches ( string key )
 		{
-			return;
+			if ( string.IsNullOrWhiteSpace( key ) )
+				throw new ArgumentNullException( nameof( key ) );
+
+			return mCondition.Matches( key );
 		}
+
+		private IRoutedCacheClientRuleCondition Condition 
+			=> mCondition;
 	}
 }

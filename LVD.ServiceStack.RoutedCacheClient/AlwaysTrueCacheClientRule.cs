@@ -31,24 +31,14 @@
 // 
 using LVD.ServiceStackRoutedCacheClient.Conditions;
 using ServiceStack.Caching;
-using System;
-using System.Collections.Generic;
 
 namespace LVD.ServiceStackRoutedCacheClient
 {
-	public class KeyStartsWithStringCacheClientRule : GenericConditionBasedCacheClientRule
+	public class AlwaysTrueCacheClientRule
+		: GenericConditionBasedCacheClientRule
 	{
-		public KeyStartsWithStringCacheClientRule ( ICacheClient cacheClient,
-			KeyStartsWithStringCacheClientRuleCondition condition )
-			: base( cacheClient, condition )
-		{
-			return;
-		}
-
-		public KeyStartsWithStringCacheClientRule ( ICacheClient cacheClient,
-		   StringComparison stringComparisonMode,
-		   params string[] tokens )
-		   : this( cacheClient, new KeyStartsWithStringCacheClientRuleCondition( stringComparisonMode, tokens ) )
+		public AlwaysTrueCacheClientRule ( ICacheClient client )
+		   : base( client, new AlwaysTrueCacheClientRuleCondition() )
 		{
 			return;
 		}

@@ -16,8 +16,4 @@
 		<PackageReference Include="ServiceStack.Interfaces" Version="5.4.0" />
 	</ItemGroup>
 
-	<ItemGroup>
-	  <Folder Include="Conditions\" />
-	</ItemGroup>
-
 </Project>

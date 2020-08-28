@@ -29,28 +29,41 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
-using LVD.ServiceStackRoutedCacheClient.Conditions;
-using ServiceStack.Caching;
 using System;
 using System.Collections.Generic;
+using System.Text;
 
-namespace LVD.ServiceStackRoutedCacheClient
+namespace LVD.ServiceStackRoutedCacheClient.Conditions
 {
-	public class KeyStartsWithStringCacheClientRule : GenericConditionBasedCacheClientRule
+	public class MatchAllRuleCondition : IRoutedCacheClientRuleCondition
 	{
-		public KeyStartsWithStringCacheClientRule ( ICacheClient cacheClient,
-			KeyStartsWithStringCacheClientRuleCondition condition )
-			: base( cacheClient, condition )
+		private IRoutedCacheClientRuleCondition[] mInnerConditions;
+
+		public MatchAllRuleCondition ( params IRoutedCacheClientRuleCondition[] conditions )
 		{
-			return;
+			if ( conditions == null || conditions.Length == 0 )
+				throw new ArgumentNullException( nameof( conditions ) );
+
+			mInnerConditions = conditions;
 		}
 
-		public KeyStartsWithStringCacheClientRule ( ICacheClient cacheClient,
-		   StringComparison stringComparisonMode,
-		   params string[] tokens )
-		   : this( cacheClient, new KeyStartsWithStringCacheClientRuleCondition( stringComparisonMode, tokens ) )
+		public bool Matches ( string key )
 		{
-			return;
+			if ( string.IsNullOrEmpty( key ) )
+				throw new ArgumentNullException( nameof( key ) );
+
+			bool matches = true;
+
+			foreach ( IRoutedCacheClientRuleCondition cond in mInnerConditions )
+			{
+				if ( !cond.Matches( key ) )
+				{
+					matches = false;
+					break;
+				}
+			}
+
+			return matches;
 		}
 	}
 }
