@@ -29,54 +29,57 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
-using Moq;
-using NUnit.Framework;
-using ServiceStack.Caching;
 using System;
+using System.Collections.Generic;
+using System.Text;
+using NUnit.Framework;
+using LVD.ServiceStackRoutedCacheClient.Conditions;
+using Moq;
+using ServiceStack.Caching;
 
 namespace LVD.ServiceStackRoutedCacheClient.Tests
 {
 	[TestFixture]
-	public class KeyStartsWithStringCacheClientRuleTests
+	public class KeyEndsWithStringCacheClientRuleTests
 	{
 		[Test]
-		[TestCase( "urn:iauthsession:", "urn:iauthsession:04562f63-ea5a-4859-bc6d-28771bda2f31",
+		[TestCase( ":urn:iauthsession", "04562f63-ea5a-4859-bc6d-28771bda2f31:urn:iauthsession",
 		   StringComparison.InvariantCultureIgnoreCase,
 		   true )]
 
-		[TestCase( "URN:IAUTHSESSION:", "urn:iauthsession:04562f63-ea5a-4859-bc6d-28771bda2f31",
+		[TestCase( ":URN:IAUTHSESSION", "04562f63-ea5a-4859-bc6d-28771bda2f31:urn:iauthsession",
 		   StringComparison.InvariantCultureIgnoreCase,
 		   true )]
 
-		[TestCase( "URN:IAUTHSESSION:", "urn:iauthsession:04562f63-ea5a-4859-bc6d-28771bda2f31",
+		[TestCase( ":URN:IAUTHSESSION", "04562f63-ea5a-4859-bc6d-28771bda2f31:urn:iauthsession",
 		   StringComparison.InvariantCulture,
 		   false )]
 
-		[TestCase( "urn:iauthsessionz:", "urn:iauthsession:04562f63-ea5a-4859-bc6d-28771bda2f31",
+		[TestCase( ":urn:iauthsessionz", "04562f63-ea5a-4859-bc6d-28771bda2f31:urn:iauthsession",
 		   StringComparison.InvariantCultureIgnoreCase,
 		   false )]
 
-		[TestCase( "urn:iauthsessionz:", "urn:iauthsession:04562f63-ea5a-4859-bc6d-28771bda2f31",
+		[TestCase( ":urn:iauthsessionz", "04562f63-ea5a-4859-bc6d-28771bda2f31:urn:iauthsession",
 		   StringComparison.InvariantCulture,
 		   false )]
 
-		[TestCase( "sess:", "sess:f405d591-2aa7-4b33-a6cb-6f5a03fc91ec:testKey",
+		[TestCase( ":sess", "f405d591-2aa7-4b33-a6cb-6f5a03fc91ec:testKey:sess",
 		   StringComparison.InvariantCultureIgnoreCase,
 		   true )]
 
-		[TestCase( "SESS:", "sess:f405d591-2aa7-4b33-a6cb-6f5a03fc91ec:testKey",
+		[TestCase( ":SESS", "f405d591-2aa7-4b33-a6cb-6f5a03fc91ec:testKey:sess",
 		   StringComparison.InvariantCultureIgnoreCase,
 		   true )]
 
-		[TestCase( "SESS:", "sess:f405d591-2aa7-4b33-a6cb-6f5a03fc91ec:testKey",
+		[TestCase( ":SESS", "f405d591-2aa7-4b33-a6cb-6f5a03fc91ec:testKey:sess",
 		   StringComparison.InvariantCulture,
 		   false )]
 
-		[TestCase( "sessz:", "sess:f405d591-2aa7-4b33-a6cb-6f5a03fc91ec:testKey",
+		[TestCase( ":sessz", "f405d591-2aa7-4b33-a6cb-6f5a03fc91ec:testKey:sess",
 		   StringComparison.InvariantCultureIgnoreCase,
 		   false )]
 
-		[TestCase( "sessz:", "sess:f405d591-2aa7-4b33-a6cb-6f5a03fc91ec:testKey",
+		[TestCase( ":sessz", "f405d591-2aa7-4b33-a6cb-6f5a03fc91ec:testKey:sess",
 		   StringComparison.InvariantCulture,
 		   false )]
 		public void Test_CanMatch ( string token, string key, StringComparison comparisonMode, bool expectedResult )
@@ -86,25 +89,25 @@ namespace LVD.ServiceStackRoutedCacheClient.Tests
 
 			ICacheClient cacheClient = cacheClientMocker.Object;
 
-			KeyStartsWithStringCacheClientRule rule =
-			   new KeyStartsWithStringCacheClientRule( cacheClient, comparisonMode, token );
+			KeyEndsWithStringCacheClientRule rule =
+			   new KeyEndsWithStringCacheClientRule( cacheClient, comparisonMode, token );
 
 			Assert.AreEqual( expectedResult, rule.Matches( key ) );
 			Assert.AreSame( cacheClient, rule.Client );
 		}
 
 		[Test]
-		[TestCase( "sess:", StringComparison.InvariantCulture, true )]
-		[TestCase( "sess:", StringComparison.InvariantCultureIgnoreCase, true )]
+		[TestCase( "x:sess", StringComparison.InvariantCulture, true )]
+		[TestCase( "y:sess", StringComparison.InvariantCultureIgnoreCase, true )]
 
-		[TestCase( "SESS:", StringComparison.InvariantCulture, false )]
-		[TestCase( "SESS:", StringComparison.InvariantCultureIgnoreCase, true )]
+		[TestCase( "z:SESS", StringComparison.InvariantCulture, false )]
+		[TestCase( "t:SESS", StringComparison.InvariantCultureIgnoreCase, true )]
 
-		[TestCase( "urn:iauthsession:", StringComparison.InvariantCulture, true )]
-		[TestCase( "urn:iauthsession:", StringComparison.InvariantCultureIgnoreCase, true )]
+		[TestCase( "a:urn:iauthsession", StringComparison.InvariantCulture, true )]
+		[TestCase( "b:urn:iauthsession", StringComparison.InvariantCultureIgnoreCase, true )]
 
-		[TestCase( "URN:IAUTHSESSION:", StringComparison.InvariantCulture, false )]
-		[TestCase( "URN:IAUTHSESSION:", StringComparison.InvariantCultureIgnoreCase, true )]
+		[TestCase( "123:URN:IAUTHSESSION", StringComparison.InvariantCulture, false )]
+		[TestCase( "456:URN:IAUTHSESSION", StringComparison.InvariantCultureIgnoreCase, true )]
 		public void Test_CanMatch_MultipleTokens ( string testKey, StringComparison comparisonMode, bool expectedMatch )
 		{
 			Mock<ICacheClient> cacheClientMocker =
@@ -112,10 +115,10 @@ namespace LVD.ServiceStackRoutedCacheClient.Tests
 
 			ICacheClient cacheClient = cacheClientMocker.Object;
 
-			KeyStartsWithStringCacheClientRule rule = new KeyStartsWithStringCacheClientRule( cacheClient,
+			KeyEndsWithStringCacheClientRule rule = new KeyEndsWithStringCacheClientRule( cacheClient,
 			   comparisonMode,
-			   "urn:iauthsession:",
-			   "sess:" );
+			   ":urn:iauthsession",
+			   ":sess" );
 
 			Assert.AreEqual( expectedMatch, rule.Matches( testKey ) );
 		}

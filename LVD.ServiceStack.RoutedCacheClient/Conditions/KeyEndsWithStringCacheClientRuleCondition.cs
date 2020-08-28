@@ -35,13 +35,13 @@ using System.Text;
 
 namespace LVD.ServiceStackRoutedCacheClient.Conditions
 {
-	public class KeyStartsWithStringCacheClientRuleCondition : IRoutedCacheClientRuleCondition
+	public class KeyEndsWithStringCacheClientRuleCondition : IRoutedCacheClientRuleCondition
 	{
 		private List<string> mTokens = new List<string>();
 
 		private StringComparison mStringComparisonMode;
 
-		public KeyStartsWithStringCacheClientRuleCondition ( StringComparison stringComparisonMode,
+		public KeyEndsWithStringCacheClientRuleCondition ( StringComparison stringComparisonMode,
 		   params string[] tokens )
 		{
 			if ( tokens == null || tokens.Length == 0 )
@@ -57,13 +57,13 @@ namespace LVD.ServiceStackRoutedCacheClient.Conditions
 				throw new ArgumentNullException( nameof( key ) );
 
 			foreach ( string token in mTokens )
-				if ( key.StartsWith( token, mStringComparisonMode ) )
+				if ( key.EndsWith( token, mStringComparisonMode ) )
 					return true;
 
 			return false;
 		}
 
-		public StringComparison StringComparisonMode 
+		public StringComparison StringComparisonMode
 			=> mStringComparisonMode;
 	}
 }
