@@ -55,9 +55,9 @@ namespace LVD.ServiceStackRoutedCacheClient.Tests
 			false )]
 		[TestCase( "URN:IAUTHSESSION:$", "urn:iauthsession:04562f63-ea5a-4859-bc6d-28771bda2f31",
 			false )]
-		[TestCase( "^[a-zA-Z0-9]{5-10}$", "ABCabc10",
+		[TestCase( "^([a-zA-Z0-9]{5,10})$", "ABCabc10",
 			true )]
-		[TestCase( "^[a-zA-Z0-9]{5-10}$", "ABCa-bc10;",
+		[TestCase( "^([a-zA-Z0-9]{5,10})$", "ABCa-bc10;",
 			false )]
 		public void Test_CanMatch ( string regex, string key, bool expectedResult )
 		{

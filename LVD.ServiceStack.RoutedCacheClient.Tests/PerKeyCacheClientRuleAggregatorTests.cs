@@ -38,79 +38,156 @@ using System.Linq;
 
 namespace LVD.ServiceStackRoutedCacheClient.Tests
 {
-   [TestFixture]
-   public class PerKeyCacheClientRuleAggregatorTests
-   {
-      [Test]
-      [TestCase(10, 1)]
-      [TestCase(13, 2)]
-      [TestCase(23, 5)]
-      [TestCase(3, 5)]
-      public void Test_CanCollect_Single(int numKeys, int numClients)
-      {
-         PerKeyCacheClientRuleAggregator aggregator =
-            new PerKeyCacheClientRuleAggregator();
+	[TestFixture]
+	public class PerKeyCacheClientRuleAggregatorTests
+	{
+		[Test]
+		[TestCase( 10, 1 )]
+		[TestCase( 13, 2 )]
+		[TestCase( 23, 5 )]
+		[TestCase( 3, 5 )]
+		public void Test_CanCollect_Single ( int numKeys, int numClients )
+		{
+			PerKeyCacheClientRuleAggregator aggregator =
+			   new PerKeyCacheClientRuleAggregator();
 
-         Dictionary<Guid, IList<string>> expectedkeysForCacheClients =
-            new Dictionary<Guid, IList<string>>();
+			Dictionary<Guid, IList<string>> keysForCacheClients =
+			   new Dictionary<Guid, IList<string>>();
 
-         List<IRoutedCacheClientRule> rules =
-            new List<IRoutedCacheClientRule>();
+			//Init rules
+			List<IRoutedCacheClientRule> cacheClientRules =
+				CreateTestRules( numClients );
 
-         List<string> testCacheKeys =
-            new List<string>();
+			foreach ( IRoutedCacheClientRule r in cacheClientRules )
+				keysForCacheClients[ r.Id ] = new List<string>();
 
-         //Init rules
-         for (int i = 0; i < numClients; i++)
-         {
-            Mock<ICacheClient> cacheClientMocker =
-               new Mock<ICacheClient>(MockBehavior.Loose);
+			//Generate some keys and distribute 
+			// them per cache client rules
+			List<string> testCacheKeys = GenerateTestKeys( numKeys,
+				cacheClientRules,
+				keysForCacheClients );
 
-            IRoutedCacheClientRule rule =
-               new AlwaysTrueCacheClientRule( cacheClientMocker.Object);
+			foreach ( KeyValuePair<Guid, IList<string>> keysForRules in keysForCacheClients )
+			{
+				IRoutedCacheClientRule rule = cacheClientRules.FirstOrDefault( r => r.Id == keysForRules.Key );
+				foreach ( string key in keysForRules.Value )
+					aggregator.Collect( key, rule );
+			}
 
-            expectedkeysForCacheClients[rule.Id] = new List<string>();
-            rules.Add(rule);
-         }
+			Assert_KeysCollected( aggregator, 
+				keysForCacheClients, 
+				cacheClientRules, 
+				numKeys );
+		}	
 
-         //Generate some keys and distribute 
-         // them per cache client rules
-         for (int i = 0; i < numKeys; i++)
-         {
-            string key = Guid.NewGuid().ToString();
-            testCacheKeys.Add(key);
+		[Test]
+		[TestCase( 10, 1 )]
+		[TestCase( 13, 2 )]
+		[TestCase( 23, 5 )]
+		[TestCase( 3, 5 )]
+		public void Test_CanCollect_All ( int numKeys, int numClients )
+		{
+			PerKeyCacheClientRuleAggregator aggregator =
+			   new PerKeyCacheClientRuleAggregator();
 
-            IRoutedCacheClientRule rule = rules[i % numClients];
-            expectedkeysForCacheClients[rule.Id].Add(key);
+			Dictionary<Guid, IList<string>> keysForCacheClients =
+			   new Dictionary<Guid, IList<string>>();
 
-            aggregator.Collect(key, rule);
-         }
+			//Init rules
+			List<IRoutedCacheClientRule> cacheClientRules =
+				CreateTestRules( numClients );
 
-         Assert.NotNull(aggregator.CacheClients);
-         Assert.NotNull(aggregator.KeysForCacheClient);
+			foreach ( IRoutedCacheClientRule r in cacheClientRules )
+				keysForCacheClients[ r.Id ] = new List<string>();
 
-         Assert.AreEqual(Math.Min(numKeys, expectedkeysForCacheClients.Count),
-            aggregator.KeysForCacheClient.Count);
+			//Generate some keys and distribute 
+			// them per cache client rules
+			List<string> testCacheKeys = GenerateTestKeys( numKeys,
+				cacheClientRules,
+				keysForCacheClients );
 
-         foreach (KeyValuePair<Guid, IList<string>> actualKeysForCacheClientPair in aggregator.KeysForCacheClient)
-         {
-            Assert.IsTrue(expectedkeysForCacheClients
-               .ContainsKey(actualKeysForCacheClientPair.Key));
+			aggregator.CollectAll( testCacheKeys, key => 
+			{
+				KeyValuePair<Guid, IList<string>> ruleWithKey = keysForCacheClients
+					.FirstOrDefault( p => p.Value.Contains( key ) );
 
-            CollectionAssert.AreEqual(expectedkeysForCacheClients[actualKeysForCacheClientPair.Key],
-               actualKeysForCacheClientPair.Value);
-         }
+				return cacheClientRules
+					.FirstOrDefault( r => r.Id == ruleWithKey.Key );
+			} );
 
-         Assert.AreEqual(Math.Min(rules.Count, numKeys),
-            aggregator.CacheClients.Count);
+			Assert_KeysCollected( aggregator,
+				keysForCacheClients,
+				cacheClientRules,
+				numKeys );
+		}
 
-         foreach (KeyValuePair<Guid, ICacheClient> actualCacheClientPair in aggregator.CacheClients)
-         {
-            Assert.IsTrue(rules.Any(r => r.Id == actualCacheClientPair.Key));
+		private static void Assert_KeysCollected ( PerKeyCacheClientRuleAggregator aggregator,
+			Dictionary<Guid, IList<string>> expectedkeysForCacheClients,
+			List<IRoutedCacheClientRule> rules,
+			int numKeys )
+		{
+			Assert.NotNull( aggregator.CacheClients );
+			Assert.NotNull( aggregator.KeysForCacheClient );
 
-            Assert.AreSame(rules.FirstOrDefault(r => r.Id == actualCacheClientPair.Key).Client,
-               actualCacheClientPair.Value);
-         }
-      }
-   }
+			Assert.AreEqual( Math.Min( numKeys, expectedkeysForCacheClients.Count ),
+			   aggregator.KeysForCacheClient.Count );
+
+			foreach ( KeyValuePair<Guid, IList<string>> actualKeysForCacheClientPair in aggregator.KeysForCacheClient )
+			{
+				Assert.IsTrue( expectedkeysForCacheClients
+				   .ContainsKey( actualKeysForCacheClientPair.Key ) );
+
+				CollectionAssert.AreEquivalent( expectedkeysForCacheClients[ actualKeysForCacheClientPair.Key ],
+				   actualKeysForCacheClientPair.Value );
+			}
+
+			Assert.AreEqual( Math.Min( rules.Count, numKeys ),
+			   aggregator.CacheClients.Count );
+
+			foreach ( KeyValuePair<Guid, ICacheClient> actualCacheClientPair in aggregator.CacheClients )
+			{
+				Assert.IsTrue( rules.Any( r => r.Id == actualCacheClientPair.Key ) );
+
+				Assert.AreSame( rules.FirstOrDefault( r => r.Id == actualCacheClientPair.Key ).Client,
+				   actualCacheClientPair.Value );
+			}
+		}
+
+		private List<IRoutedCacheClientRule> CreateTestRules ( int numClients )
+		{
+			List<IRoutedCacheClientRule> rules =
+			   new List<IRoutedCacheClientRule>();
+
+			for ( int i = 0; i < numClients; i++ )
+			{
+				Mock<ICacheClient> cacheClientMocker =
+				   new Mock<ICacheClient>( MockBehavior.Loose );
+
+				IRoutedCacheClientRule rule =
+				   new AlwaysTrueCacheClientRule( cacheClientMocker.Object );
+				rules.Add( rule );
+			}
+
+			return rules;
+		}
+
+		private List<string> GenerateTestKeys ( int numKeys,
+			List<IRoutedCacheClientRule> forRules,
+			Dictionary<Guid, IList<string>> keysForClients )
+		{
+			List<string> testCacheKeys =
+				new List<string>();
+
+			for ( int i = 0; i < numKeys; i++ )
+			{
+				string key = Guid.NewGuid().ToString();
+				testCacheKeys.Add( key );
+
+				IRoutedCacheClientRule rule = forRules[ i % forRules.Count ];
+				keysForClients[ rule.Id ].Add( key );
+			}
+
+			return testCacheKeys;
+		}
+	}
 }
