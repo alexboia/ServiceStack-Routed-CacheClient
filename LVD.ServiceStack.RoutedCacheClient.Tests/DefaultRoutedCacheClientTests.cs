@@ -29,6 +29,7 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
+using Bogus;
 using Moq;
 using NUnit.Framework;
 using ServiceStack.Caching;
@@ -299,6 +300,56 @@ namespace LVD.ServiceStackRoutedCacheClient.Tests
 			   Times.Once );
 			fallbackClientMocker.Verify( c => c.Set<string>( randomKey, fallbackClientVal, timeSpanRef ),
 			   Times.Once );
+
+			sessionClientMocker.VerifyNoOtherCalls();
+			fallbackClientMocker.VerifyNoOtherCalls();
+		}
+
+		[Test]
+		[TestCase( 0, 1 )]
+		[TestCase( 1, 0 )]
+		[TestCase( 5, 1 )]
+		[TestCase( 1, 5 )]
+		[TestCase( 5, 10 )]
+		[TestCase( 10, 5 )]
+		public void Test_CanRoute_SetAll ( int numSessionClientVals, int numFallbackClientVals )
+		{
+			Faker faker = new Faker();
+
+			Mock<ICacheClient> sessionClientMocker =
+			   new Mock<ICacheClient>( MockBehavior.Strict );
+
+			Mock<ICacheClient> fallbackClientMocker =
+			   new Mock<ICacheClient>( MockBehavior.Strict );
+
+			Dictionary<string, decimal> sessionValues =
+				new Dictionary<string, decimal>();
+
+			Dictionary<string, string> fallbackValues =
+				new Dictionary<string, string>();
+
+			for ( int i = 0; i < numSessionClientVals; i++ )
+				sessionValues[ SessionKey ] = faker.Random.Decimal();
+
+			for ( int i = 0; i < numFallbackClientVals; i++ )
+				fallbackValues[ RandomKey ] = faker.Random.String();
+
+			sessionClientMocker.Setup( c => c.SetAll( sessionValues ) );
+			fallbackClientMocker.Setup( c => c.SetAll( fallbackValues ) );
+
+			ICacheClient sessionClient = sessionClientMocker.Object;
+			ICacheClient fallbackClient = fallbackClientMocker.Object;
+
+			IRoutedCacheClient routedCacheClient =
+			   CreateRoutedCacheClient( fallbackClient, sessionClient );
+
+			routedCacheClient.SetAll( sessionValues );
+			routedCacheClient.SetAll( fallbackValues );
+
+			if ( numSessionClientVals > 0 )
+				sessionClientMocker.Verify( c => c.SetAll( sessionValues ) );
+			if ( numFallbackClientVals > 0 )
+				fallbackClientMocker.Verify( c => c.SetAll( fallbackValues ) );
 
 			sessionClientMocker.VerifyNoOtherCalls();
 			fallbackClientMocker.VerifyNoOtherCalls();
