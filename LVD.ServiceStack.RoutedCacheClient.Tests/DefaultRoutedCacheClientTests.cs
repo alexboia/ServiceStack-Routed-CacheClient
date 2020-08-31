@@ -35,6 +35,7 @@ using NUnit.Framework;
 using ServiceStack.Caching;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 
 namespace LVD.ServiceStackRoutedCacheClient.Tests
@@ -199,6 +200,81 @@ namespace LVD.ServiceStackRoutedCacheClient.Tests
 			if ( numFallbackClientVals > 0 )
 				fallbackClientMocker.Verify( c => c.GetAll<string>( fallbackValues.Keys ),
 				   Times.Once );
+
+			sessionClientMocker.VerifyNoOtherCalls();
+			fallbackClientMocker.VerifyNoOtherCalls();
+		}
+
+		[Test]
+		public void Test_CanRoute_GetTimeToLive_NotNullTtl ()
+		{
+			Faker faker = new Faker();
+
+			Mock<ICacheClientExtended> sessionClientMocker =
+			   new Mock<ICacheClientExtended>( MockBehavior.Strict );
+
+			Mock<ICacheClientExtended> fallbackClientMocker =
+			   new Mock<ICacheClientExtended>( MockBehavior.Strict );
+
+			string randomKey = RandomKey;
+			string sessionKey = SessionKey;
+
+			TimeSpan sessionKeyTtl = faker.Date.Timespan();
+			TimeSpan randomKeyTtl = faker.Date.Timespan();
+
+			sessionClientMocker.Setup( c => c.GetTimeToLive( sessionKey ) )
+			   .Returns( sessionKeyTtl );
+			fallbackClientMocker.Setup( c => c.GetTimeToLive( randomKey ) )
+			   .Returns( randomKeyTtl );
+
+			ICacheClient sessionClient = sessionClientMocker.Object;
+			ICacheClient fallbackClient = fallbackClientMocker.Object;
+
+			IRoutedCacheClient routedCacheClient =
+			   CreateRoutedCacheClient( fallbackClient, sessionClient );
+
+			Assert.AreEqual( sessionKeyTtl, routedCacheClient.GetTimeToLive( sessionKey ) );
+			Assert.AreEqual( randomKeyTtl, routedCacheClient.GetTimeToLive( randomKey ) );
+
+			sessionClientMocker.Verify( c => c.GetTimeToLive( sessionKey ),
+				Times.Once );
+			fallbackClientMocker.Verify( c => c.GetTimeToLive( randomKey ),
+				Times.Once );
+
+			sessionClientMocker.VerifyNoOtherCalls();
+			fallbackClientMocker.VerifyNoOtherCalls();
+		}
+
+		[Test]
+		public void Test_CanRoute_GetTimeToLive_NullTtl ()
+		{
+			Mock<ICacheClientExtended> sessionClientMocker =
+			   new Mock<ICacheClientExtended>( MockBehavior.Strict );
+
+			Mock<ICacheClientExtended> fallbackClientMocker =
+			   new Mock<ICacheClientExtended>( MockBehavior.Strict );
+
+			string randomKey = RandomKey;
+			string sessionKey = SessionKey;
+
+			sessionClientMocker.Setup( c => c.GetTimeToLive( sessionKey ) )
+			   .Returns( ( TimeSpan? )null );
+			fallbackClientMocker.Setup( c => c.GetTimeToLive( randomKey ) )
+			   .Returns( ( TimeSpan? )null );
+
+			ICacheClient sessionClient = sessionClientMocker.Object;
+			ICacheClient fallbackClient = fallbackClientMocker.Object;
+
+			IRoutedCacheClient routedCacheClient =
+			   CreateRoutedCacheClient( fallbackClient, sessionClient );
+
+			Assert.AreEqual( null, routedCacheClient.GetTimeToLive( sessionKey ) );
+			Assert.AreEqual( null, routedCacheClient.GetTimeToLive( randomKey ) );
+
+			sessionClientMocker.Verify( c => c.GetTimeToLive( sessionKey ),
+				Times.Once );
+			fallbackClientMocker.Verify( c => c.GetTimeToLive( randomKey ),
+				Times.Once );
 
 			sessionClientMocker.VerifyNoOtherCalls();
 			fallbackClientMocker.VerifyNoOtherCalls();
