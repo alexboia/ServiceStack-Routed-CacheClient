@@ -146,6 +146,65 @@ namespace LVD.ServiceStackRoutedCacheClient.Tests
 		}
 
 		[Test]
+		[TestCase( 0, 1 )]
+		[TestCase( 1, 0 )]
+		[TestCase( 5, 1 )]
+		[TestCase( 1, 5 )]
+		[TestCase( 5, 10 )]
+		[TestCase( 10, 5 )]
+		public void Test_CanRoute_GetAll ( int numSessionClientVals, int numFallbackClientVals )
+		{
+			Faker faker = new Faker();
+
+			Mock<ICacheClient> sessionClientMocker =
+			   new Mock<ICacheClient>( MockBehavior.Strict );
+
+			Mock<ICacheClient> fallbackClientMocker =
+			   new Mock<ICacheClient>( MockBehavior.Strict );
+
+			IDictionary<string, decimal> sessionValues =
+				new Dictionary<string, decimal>();
+
+			IDictionary<string, string> fallbackValues =
+				new Dictionary<string, string>();
+
+			for ( int i = 0; i < numSessionClientVals; i++ )
+				sessionValues[ SessionKey ] = faker.Random.Decimal();
+
+			for ( int i = 0; i < numFallbackClientVals; i++ )
+				fallbackValues[ RandomKey ] = faker.Random.String();
+
+			sessionClientMocker.Setup( c => c.GetAll<decimal>( sessionValues.Keys ) )
+				.Returns( sessionValues );
+			fallbackClientMocker.Setup( c => c.GetAll<string>( fallbackValues.Keys ) )
+				.Returns( fallbackValues );
+
+			ICacheClient sessionClient = sessionClientMocker.Object;
+			ICacheClient fallbackClient = fallbackClientMocker.Object;
+
+			IRoutedCacheClient routedCacheClient =
+			   CreateRoutedCacheClient( fallbackClient, sessionClient );
+
+			IDictionary<string, decimal> actualSessionValues = routedCacheClient
+				.GetAll<decimal>( sessionValues.Keys );
+			IDictionary<string, string> actualFallbackValues = routedCacheClient
+				.GetAll<string>( fallbackValues.Keys );
+
+			CollectionAssert.AreEquivalent( sessionValues, actualSessionValues );
+			CollectionAssert.AreEquivalent( fallbackValues, actualFallbackValues );
+
+			if ( numSessionClientVals > 0 )
+				sessionClientMocker.Verify( c => c.GetAll<decimal>( sessionValues.Keys ),
+				   Times.Once );
+			if ( numFallbackClientVals > 0 )
+				fallbackClientMocker.Verify( c => c.GetAll<string>( fallbackValues.Keys ),
+				   Times.Once );
+
+			sessionClientMocker.VerifyNoOtherCalls();
+			fallbackClientMocker.VerifyNoOtherCalls();
+		}
+
+		[Test]
 		public void Test_CanRoute_SingleRemoveCalls ()
 		{
 			Mock<ICacheClient> sessionClientMocker =
