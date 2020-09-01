@@ -28,7 +28,7 @@ Available as a NuGet package, [here](https://www.nuget.org/packages/LVD.ServiceS
 
 ## How to use
 
-### 1. Add namespace referance
+### 1. Add namespace reference
 
 `using LVD.ServiceStackRoutedCacheClient`.
 
@@ -64,7 +64,15 @@ OrmLiteCacheClient<CacheEntry> ormLiteCacheClient =
 routedCacheClient.PushServiceStackSessionCacheClient(ormLiteCacheClient);
 ```
 
-### 4. Creating Custom Rules
+### 4. Built-in rules
+
+- `GenericConditionBasedCacheClientRule` - matches keys that satisfy a given condition; 
+- `KeyStartsWithStringCacheClientRule` - matches keys that start with a given sub-string (uses `KeyStartsWithStringCacheClientRuleCondition`);
+- `KeyEndsWithStringCacheClientRule` - matches keys that start with a given sub-string (uses `KeyEndsWithStringCacheClientRuleCondition`);
+- `AlwaysTrueCacheClientRule` - matches keys that start with a given sub-string (uses `AlwaysTrueCacheClientRuleCondition`);
+- `AlwaysFalseCacheClientRule` - matches keys that start with a given sub-string (uses `AlwaysFalseCacheClientRuleCondition`).
+
+### 5. Creating Custom Rules
 
 The library only comes with a handful of rules, but creating your own 
 is as easy as extending the `BaseCacheClientRule` class and providing 
@@ -107,7 +115,7 @@ public class KeyStartsWithStringCacheClientRule : BaseCacheClientRule
 }
 ```
 
-### 5. Sample project
+### 6. Sample project
 
 A sample project has been provided, to see just how this would behave in the real world.  
 Head over to `LVD.ServiceStack.RoutedCacheClient.Example` for the full details, but, in short, it exposes three service endpoints:
@@ -134,19 +142,46 @@ The output of `/list-cache-providers-data` looks something like:
 }
 ```
 
+## Breaking changes
+
+### In Version 1.1.0
+
+- `KeyStartsWithStringCacheClientRule` no longer extends `BaseCacheClientRule`, but `GenericConditionBasedCacheClientRule`;
+- `ServiceStackSessionKeyCacheClientRule` no longer extends `BaseCacheClientRule`, but `GenericConditionBasedCacheClientRule`;
+- `AlwaysTrueCacheClientRule` no longer extends `BaseCacheClientRule`, but `GenericConditionBasedCacheClientRule`;
+- `AlwaysTrueCacheClientRule` now throws an exception when checking for an empty key (calling `.Matches(null|string.Empty)`);
+- Calling any method on a disposed `DefaultRoutedCacheClient` instance throws `ObjectDisposedException`.
+
+## Changelog
+
+### Version 1.1.0
+
+- Added utility methods to inspect cache client configuration - [Issue #4](https://github.com/alexboia/ServiceStack-Routed-CacheClient/issues/4);
+- Refactoring - extracted the explicit concept of condition from that of a cache client rule - [Issue #2](https://github.com/alexboia/ServiceStack-Routed-CacheClient/issues/2);
+- Additional conditions provided:
+    - cache key ends with substring - [Issue #5](https://github.com/alexboia/ServiceStack-Routed-CacheClient/issues/5);
+    - cache key matches a given regexp - [Issue #6](https://github.com/alexboia/ServiceStack-Routed-CacheClient/issues/6);
+    - compose conditions using OR operator;
+    - compose conditions using AND operator.
+- Improved test coverage and code comments.
+
+### Version 1.0.0
+
+Initial release.
+
 ## What's next
 
 As a rough timeline, I would like to see the following happening:
 
 - Refactor things a bit and add some comments, at least for critical areas;
-- Add some more routing rules. Here are some of the rules I'm thinking about:
-	- match a regex pattern;
-	- match rules that ends with a given string;
-	- composed rules using basic `AND`/`OR` logical operators.
+- ~~Add some more routing rules. Here are some of the rules I'm thinking about~~:
+	- ~~match a regex pattern~~;
+	- ~~match rules that ends with a given string~~;
+	- ~~composed rules using basic `AND`/`OR` logical operators~~.
 - Enhance the API:
-	- would be useful to have a way of listing all the registered cache clients;
-	- allow method chaining when registering cache client rules.
-- Additional automated tests.
+	- ~~would be useful to have a way of listing all the registered cache clients~~;
+	- ~~allow method chaining when registering cache client rules~~.
+- Additional automated tests (in-progress).
 
 ## Donate
 
