@@ -66,52 +66,109 @@ routedCacheClient.PushServiceStackSessionCacheClient(ormLiteCacheClient);
 
 ### 4. Built-in rules
 
+The library provides the following built-in rules:
+
 - `GenericConditionBasedCacheClientRule` - matches keys that satisfy a given condition; 
 - `KeyStartsWithStringCacheClientRule` - matches keys that start with a given sub-string (uses `KeyStartsWithStringCacheClientRuleCondition`);
 - `KeyEndsWithStringCacheClientRule` - matches keys that start with a given sub-string (uses `KeyEndsWithStringCacheClientRuleCondition`);
 - `AlwaysTrueCacheClientRule` - matches keys that start with a given sub-string (uses `AlwaysTrueCacheClientRuleCondition`);
 - `AlwaysFalseCacheClientRule` - matches keys that start with a given sub-string (uses `AlwaysFalseCacheClientRuleCondition`).
 
-### 5. Creating Custom Rules
+### 5. Extending the Routing Behaviour
 
-The library only comes with a handful of rules, but creating your own 
-is as easy as extending the `BaseCacheClientRule` class and providing 
-an implementation for the `bool Match(string key)` method. 
+#### 5.2. Creating Custom Conditions
 
-As an example, here is the implementation of the built-in `KeyStartsWithStringCacheClientRule` rule:
+Creating your own conditions is as easy as implementing `IRoutedCacheClientRuleCondition` 
+with the single method `bool Matches ( string key )`.
+This is also the recommended way of exteding the library's routing behaviour.
+
+As an example, here is the implementation of the built-in `KeyStartsWithStringCacheClientRuleCondition` condition:
 
 ```csharp
-public class KeyStartsWithStringCacheClientRule : BaseCacheClientRule
+public class KeyStartsWithStringCacheClientRuleCondition : IRoutedCacheClientRuleCondition
 {
-    private List<string> mTokens = new List<string>();
+	private List<string> mTokens = new List<string>();
 
-    private StringComparison mStringComparisonMode;
+	private StringComparison mStringComparisonMode;
 
-    public KeyStartsWithStringCacheClientRule(ICacheClient cacheClient,
-        StringComparison stringComparisonMode,
-        params string[] tokens)
-        : base(cacheClient)
-    {
-        if (tokens == null || tokens.Length == 0)
-        throw new ArgumentNullException(nameof(tokens));
+	public KeyStartsWithStringCacheClientRuleCondition ( StringComparison stringComparisonMode,
+		params string[] tokens )
+	{
+		if ( tokens == null || tokens.Length == 0 )
+			throw new ArgumentNullException( nameof( tokens ) );
 
-        mTokens.AddRange(tokens);
-        mStringComparisonMode = stringComparisonMode;
-    }
+		mTokens.AddRange( tokens );
+		mStringComparisonMode = stringComparisonMode;
+	}
 
-    public override bool Matches(string key)
-    {
-        if (string.IsNullOrWhiteSpace(key))
-        throw new ArgumentNullException(nameof(key));
+	public bool Matches ( string key )
+	{
+		if ( string.IsNullOrWhiteSpace( key ) )
+			throw new ArgumentNullException( nameof( key ) );
 
-        foreach (string token in mTokens)
-        if (key.StartsWith(token, mStringComparisonMode))
-            return true;
+		foreach ( string token in mTokens )
+			if ( key.StartsWith( token, mStringComparisonMode ) )
+				return true;
 
-        return false;
-    }
+		return false;
+	}
 
-    public StringComparison StringComparisonMode => mStringComparisonMode;
+	public StringComparison StringComparisonMode 
+		=> mStringComparisonMode;
+}
+```
+
+#### 5.1. Creating Custom Rules
+
+Creating your own rules is as easy as 
+	- extending the `GenericConditionBasedCacheClientRule` class and providing a condition to this base class (this is a useful shortcut to always instantiating `GenericConditionBasedCacheClientRule` with the same condition). 
+	- or extending the `BaseCacheClientRule` class and providing an implementation for the `bool Matches ( string key )` method (should you wish to bypass using a condition altogether).
+
+Example #1 - the implementation of the built-in `KeyStartsWithStringCacheClientRule` rule:
+
+```csharp
+public class KeyStartsWithStringCacheClientRule : GenericConditionBasedCacheClientRule
+{
+	public KeyStartsWithStringCacheClientRule ( ICacheClient cacheClient,
+		KeyStartsWithStringCacheClientRuleCondition condition )
+		: base( cacheClient, condition )
+	{
+		return;
+	}
+
+	public KeyStartsWithStringCacheClientRule ( ICacheClient cacheClient,
+		StringComparison stringComparisonMode,
+		params string[] tokens )
+		: this( cacheClient, new KeyStartsWithStringCacheClientRuleCondition( stringComparisonMode, tokens ) )
+	{
+		return;
+	}
+}
+```
+
+Example #2 - the implementation of the built-in `GenericConditionBasedCacheClientRule` rule:
+```csharp
+public class GenericConditionBasedCacheClientRule : BaseCacheClientRule
+{
+	private IRoutedCacheClientRuleCondition mCondition;
+
+	public GenericConditionBasedCacheClientRule ( ICacheClient cacheClient, IRoutedCacheClientRuleCondition condition )
+		: base( cacheClient )
+	{
+		mCondition = condition
+			?? throw new ArgumentNullException( nameof( condition ) );
+	}
+
+	public override bool Matches ( string key )
+	{
+		if ( string.IsNullOrWhiteSpace( key ) )
+			throw new ArgumentNullException( nameof( key ) );
+
+		return mCondition.Matches( key );
+	}
+
+	private IRoutedCacheClientRuleCondition Condition 
+		=> mCondition;
 }
 ```
 
@@ -174,7 +231,7 @@ Initial release.
 As a rough timeline, I would like to see the following happening:
 
 - Refactor things a bit and add some comments, at least for critical areas;
-- ~~Add some more routing rules. Here are some of the rules I'm thinking about~~:
+- Add some more routing rules. Here are some of the rules I'm thinking about:
 	- ~~match a regex pattern~~;
 	- ~~match rules that ends with a given string~~;
 	- ~~composed rules using basic `AND`/`OR` logical operators~~.
