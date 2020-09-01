@@ -76,7 +76,7 @@ The library provides the following built-in rules:
 
 ### 5. Extending the Routing Behaviour
 
-#### 5.2. Creating Custom Conditions
+#### 5.1. Creating Custom Conditions
 
 Creating your own conditions is as easy as implementing `IRoutedCacheClientRuleCondition` 
 with the single method `bool Matches ( string key )`.
@@ -118,7 +118,7 @@ public class KeyStartsWithStringCacheClientRuleCondition : IRoutedCacheClientRul
 }
 ```
 
-#### 5.1. Creating Custom Rules
+#### 5.2. Creating Custom Rules
 
 Creating your own rules is as easy as 
 	- extending the `GenericConditionBasedCacheClientRule` class and providing a condition to this base class (this is a useful shortcut to always instantiating `GenericConditionBasedCacheClientRule` with the same condition). 
