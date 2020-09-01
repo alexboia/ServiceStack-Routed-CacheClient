@@ -34,7 +34,8 @@ Available as a NuGet package, [here](https://www.nuget.org/packages/LVD.ServiceS
 
 ### 2. Create your routed cache client instance
 
-In this example, the default `MemoryCacheClient` provided by ServiceStack is used as a fallback client.
+In this example, the default `MemoryCacheClient` provided by ServiceStack is used as a fallback client, 
+which means it will used to handle keys that are not matched by any of the registered rules.
 
 ```csharp
 IRoutedCacheClient routedCacheClient = new DefaultRoutedCacheClient(new MemoryCacheClient());
