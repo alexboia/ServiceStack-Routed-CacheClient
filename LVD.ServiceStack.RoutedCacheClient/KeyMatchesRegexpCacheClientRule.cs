@@ -29,13 +29,14 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
+using LVD.ServiceStackRoutedCacheClient.Conditions;
 using ServiceStack.Caching;
 using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace LVD.ServiceStackRoutedCacheClient.Conditions
+namespace LVD.ServiceStackRoutedCacheClient
 {
 	public class KeyMatchesRegexpCacheClientRule : GenericConditionBasedCacheClientRule
 	{

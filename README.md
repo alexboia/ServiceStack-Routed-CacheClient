@@ -64,19 +64,36 @@ OrmLiteCacheClient<CacheEntry> ormLiteCacheClient =
 routedCacheClient.PushServiceStackSessionCacheClient(ormLiteCacheClient);
 ```
 
-### 4. Built-in rules
+### 4. Built-in routing behaviour
+
+### 4.1. Built-in conditions
+
+The library provides the following built-in conditions:
+
+- `KeyStartsWithStringCacheClientRuleCondition` - matches keys that start with a given sub-string;
+- `KeyEndsWithStringCacheClientRuleCondition` - matches keys that end with a given sub-string;
+- `KeyMatchesRegexpCacheClientRuleCondition` - matches keys based on a regular expression;
+- `ServiceStackSessionKeyCacheClientRuleCondition` - matches keys used to store ServiceStack session data;
+- `AlwaysTrueCacheClientRuleCondition` - matches any key;
+- `AlwaysFalseCacheClientRuleCondition` - doesn't match anything;
+- `MatchAnyRuleCondition` - allows composing conditions using `OR` boolean operator (i.e. returns true if at least one condition evaluates to true);
+- `MatchAllRuleCondition` - allows composing conditions using `AND` boolean operator (i.e. returns true if all conditions evaluate to true).
+
+### 4.2. Built-in rules
 
 The library provides the following built-in rules:
 
 - `GenericConditionBasedCacheClientRule` - matches keys that satisfy a given condition; 
 - `KeyStartsWithStringCacheClientRule` - matches keys that start with a given sub-string (uses `KeyStartsWithStringCacheClientRuleCondition`);
-- `KeyEndsWithStringCacheClientRule` - matches keys that start with a given sub-string (uses `KeyEndsWithStringCacheClientRuleCondition`);
-- `AlwaysTrueCacheClientRule` - matches keys that start with a given sub-string (uses `AlwaysTrueCacheClientRuleCondition`);
-- `AlwaysFalseCacheClientRule` - matches keys that start with a given sub-string (uses `AlwaysFalseCacheClientRuleCondition`).
+- `KeyEndsWithStringCacheClientRule` - matches keys that end with a given sub-string (uses `KeyEndsWithStringCacheClientRuleCondition`);
+- `KeyMatchesRegexpCacheClientRule` - matches keys based on a regular expression (uses `KeyMatchesRegexpCacheClientRuleCondition`);
+- `ServiceStackSessionKeyCacheClientRule` - matches keys used to store ServiceStack session data (uses `ServiceStackSessionKeyCacheClientRuleCondition`);
+- `AlwaysTrueCacheClientRule` - matches any key (uses `AlwaysTrueCacheClientRuleCondition`);
+- `AlwaysFalseCacheClientRule` - doesn't match anything (uses `AlwaysFalseCacheClientRuleCondition`).
 
-### 5. Extending the Routing Behaviour
+### 5. Extending the routing behaviour
 
-#### 5.1. Creating Custom Conditions
+#### 5.1. Creating custom conditions
 
 Creating your own conditions is as easy as implementing `IRoutedCacheClientRuleCondition` 
 with the single method `bool Matches ( string key )`.
@@ -118,7 +135,7 @@ public class KeyStartsWithStringCacheClientRuleCondition : IRoutedCacheClientRul
 }
 ```
 
-#### 5.2. Creating Custom Rules
+#### 5.2. Creating custom rules
 
 Creating your own rules is as easy as 
 	- extending the `GenericConditionBasedCacheClientRule` class and providing a condition to this base class (this is a useful shortcut to always instantiating `GenericConditionBasedCacheClientRule` with the same condition). 
