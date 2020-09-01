@@ -19,12 +19,17 @@ namespace LVD.ServiceStackRoutedCacheClient
 		/// <param name="routedClient">The target routed cache client</param>
 		/// <param name="cacheClient">The cache client that will be used for session storage.</param>
 		/// <returns></returns>
-		public static IRoutedCacheClient PushServiceStackSessionCacheClient ( this IRoutedCacheClient routedClient, ICacheClient cacheClient )
+		public static IRoutedCacheClient PushServiceStackSessionCacheClient ( this IRoutedCacheClient routedClient,
+			ICacheClient cacheClient,
+			bool autoDispose = true )
 		{
 			if ( routedClient == null )
 				throw new ArgumentNullException( nameof( routedClient ) );
 
-			routedClient.PushClientWithRule( new ServiceStackSessionKeyCacheClientRule( cacheClient ) );
+			IRoutedCacheClientRule serviceStackSessionRule = new ServiceStackSessionKeyCacheClientRule( cacheClient );
+			serviceStackSessionRule.AutoDispose = autoDispose;
+
+			routedClient.PushClientWithRule( serviceStackSessionRule );
 			return routedClient;
 		}
 	}

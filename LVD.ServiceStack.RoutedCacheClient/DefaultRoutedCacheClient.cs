@@ -40,44 +40,62 @@ namespace LVD.ServiceStackRoutedCacheClient
 {
 	public class DefaultRoutedCacheClient : IRoutedCacheClient
 	{
+		private bool mIsDisposed = false;
+
 		private Stack<IRoutedCacheClientRule> mRules =
 		   new Stack<IRoutedCacheClientRule>();
 
 		public DefaultRoutedCacheClient ( ICacheClient fallbackClient )
+			: this( fallbackClient, true )
+		{
+			return;
+		}
+
+		public DefaultRoutedCacheClient ( ICacheClient fallbackClient, bool autoDispose )
 		{
 			if ( fallbackClient == null )
 				throw new ArgumentNullException( nameof( fallbackClient ) );
 
-			mRules.Push( new AlwaysTrueCacheClientRule( fallbackClient ) );
+			IRoutedCacheClientRule defaultRule = new AlwaysTrueCacheClientRule( fallbackClient );
+			defaultRule.AutoDispose = autoDispose;
+
+			mRules.Push( defaultRule );
 		}
 
 		public bool Add<T> ( string key, T value )
 		{
+			CheckNotDisposedOrThrow();
 			return FindClient( key )
 			   .Add<T>( key, value );
 		}
 
 		public bool Add<T> ( string key, T value, TimeSpan expiresIn )
 		{
+			CheckNotDisposedOrThrow();
 			return FindClient( key )
 			   .Add<T>( key, value, expiresIn );
 		}
 
 		public bool Add<T> ( string key, T value, DateTime expiresAt )
 		{
+			CheckNotDisposedOrThrow();
 			return FindClient( key )
 			   .Add<T>( key, value, expiresAt );
 		}
 
 		public long Decrement ( string key, uint amount )
 		{
+			CheckNotDisposedOrThrow();
 			return FindClient( key )
 			   .Decrement( key, amount );
 		}
 
 		public void FlushAll ()
 		{
-			List<ICacheClient> visited = new List<ICacheClient>();
+			CheckNotDisposedOrThrow();
+
+			List<ICacheClient> visited =
+				new List<ICacheClient>();
 
 			try
 			{
@@ -101,12 +119,15 @@ namespace LVD.ServiceStackRoutedCacheClient
 
 		public T Get<T> ( string key )
 		{
+			CheckNotDisposedOrThrow();
 			return FindClient( key )
 			   .Get<T>( key );
 		}
 
 		public IDictionary<string, T> GetAll<T> ( IEnumerable<string> keys )
 		{
+			CheckNotDisposedOrThrow();
+
 			if ( keys == null )
 				throw new ArgumentNullException( nameof( keys ) );
 
@@ -152,8 +173,12 @@ namespace LVD.ServiceStackRoutedCacheClient
 
 		public IEnumerable<string> GetKeysByPattern ( string pattern )
 		{
-			List<string> keys = new List<string>();
-			List<ICacheClient> visited = new List<ICacheClient>();
+			CheckNotDisposedOrThrow();
+
+			List<string> keys =
+				new List<string>();
+			List<ICacheClient> visited =
+				new List<ICacheClient>();
 
 			//A cache client may be registered multiple 
 			// times with different rules;
@@ -178,6 +203,8 @@ namespace LVD.ServiceStackRoutedCacheClient
 
 		public TimeSpan? GetTimeToLive ( string key )
 		{
+			CheckNotDisposedOrThrow();
+
 			ICacheClient client = FindClient( key );
 			if ( client is ICacheClientExtended )
 				return ( ( ICacheClientExtended )client ).GetTimeToLive( key );
@@ -187,18 +214,22 @@ namespace LVD.ServiceStackRoutedCacheClient
 
 		public long Increment ( string key, uint amount )
 		{
+			CheckNotDisposedOrThrow();
 			return FindClient( key )
 			   .Increment( key, amount );
 		}
 
 		public bool Remove ( string key )
 		{
+			CheckNotDisposedOrThrow();
 			return FindClient( key )
 			   .Remove( key );
 		}
 
 		public void RemoveAll ( IEnumerable<string> keys )
 		{
+			CheckNotDisposedOrThrow();
+
 			if ( keys == null )
 				throw new ArgumentNullException( nameof( keys ) );
 
@@ -234,42 +265,50 @@ namespace LVD.ServiceStackRoutedCacheClient
 
 		public bool Replace<T> ( string key, T value )
 		{
+			CheckNotDisposedOrThrow();
 			return FindClient( key )
 			   .Replace<T>( key, value );
 		}
 
 		public bool Replace<T> ( string key, T value, TimeSpan expiresIn )
 		{
+			CheckNotDisposedOrThrow();
 			return FindClient( key )
 			   .Replace<T>( key, value, expiresIn );
 		}
 
 		public bool Replace<T> ( string key, T value, DateTime expiresAt )
 		{
+			CheckNotDisposedOrThrow();
 			return FindClient( key )
 			   .Replace<T>( key, value, expiresAt );
 		}
 
 		public bool Set<T> ( string key, T value )
 		{
+			CheckNotDisposedOrThrow();
 			return FindClient( key )
 			   .Set<T>( key, value );
 		}
 
 		public bool Set<T> ( string key, T value, TimeSpan expiresIn )
 		{
+			CheckNotDisposedOrThrow();
 			return FindClient( key )
 			   .Set<T>( key, value, expiresIn );
 		}
 
 		public bool Set<T> ( string key, T value, DateTime expiresAt )
 		{
+			CheckNotDisposedOrThrow();
 			return FindClient( key )
 			   .Set<T>( key, value, expiresAt );
 		}
 
 		public void SetAll<T> ( IDictionary<string, T> values )
 		{
+			CheckNotDisposedOrThrow();
+
 			if ( values == null )
 				throw new ArgumentNullException( nameof( values ) );
 
@@ -309,6 +348,8 @@ namespace LVD.ServiceStackRoutedCacheClient
 
 		public IRoutedCacheClient PushClientWithRule ( IRoutedCacheClientRule rule )
 		{
+			CheckNotDisposedOrThrow();
+
 			if ( rule == null )
 				throw new ArgumentNullException( nameof( rule ) );
 
@@ -318,6 +359,8 @@ namespace LVD.ServiceStackRoutedCacheClient
 
 		public IRoutedCacheClient ClearRules ()
 		{
+			CheckNotDisposedOrThrow();
+
 			while ( mRules.Count > 1 )
 				mRules.Pop();
 
@@ -326,6 +369,8 @@ namespace LVD.ServiceStackRoutedCacheClient
 
 		public IDictionary<string, ICacheClient> GetRegisteredClients ()
 		{
+			CheckNotDisposedOrThrow();
+
 			Dictionary<string, int> discriminatorMap =
 			   new Dictionary<string, int>();
 
@@ -360,7 +405,10 @@ namespace LVD.ServiceStackRoutedCacheClient
 
 		public IEnumerable<IRoutedCacheClientRule> GetRegisteredClientRules ()
 		{
-			List<IRoutedCacheClientRule> rulesSnapshot = new List<IRoutedCacheClientRule>();
+			CheckNotDisposedOrThrow();
+
+			List<IRoutedCacheClientRule> rulesSnapshot =
+				new List<IRoutedCacheClientRule>();
 
 			foreach ( IRoutedCacheClientRule rule in mRules )
 				rulesSnapshot.Add( rule );
@@ -378,15 +426,27 @@ namespace LVD.ServiceStackRoutedCacheClient
 			return FindRule( key )?.Client;
 		}
 
+		private void CheckNotDisposedOrThrow ()
+		{
+			if ( mIsDisposed )
+				throw new ObjectDisposedException( $"Cannot use a disposed {nameof( DefaultRoutedCacheClient )} object instance" );
+		}
+
 		protected void Dispose ( bool disposing )
 		{
-			if ( disposing )
+			if ( !mIsDisposed )
 			{
-				while ( mRules.Count > 0 )
+				if ( disposing )
 				{
-					IRoutedCacheClientRule rule = mRules.Pop();
-					rule.Client.Dispose();
+					while ( mRules.Count > 0 )
+					{
+						IRoutedCacheClientRule rule = mRules.Pop();
+						if ( rule.AutoDispose )
+							rule.Client.Dispose();
+					}
 				}
+
+				mIsDisposed = true;
 			}
 		}
 

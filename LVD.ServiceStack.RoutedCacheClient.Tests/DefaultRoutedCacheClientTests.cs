@@ -197,9 +197,16 @@ namespace LVD.ServiceStackRoutedCacheClient.Tests
 			if ( numSessionClientVals > 0 )
 				sessionClientMocker.Verify( c => c.GetAll<decimal>( sessionValues.Keys ),
 				   Times.Once );
+			else
+				sessionClientMocker.Verify( c => c.GetAll<decimal>( sessionValues.Keys ),
+					Times.Never );
+
 			if ( numFallbackClientVals > 0 )
 				fallbackClientMocker.Verify( c => c.GetAll<string>( fallbackValues.Keys ),
 				   Times.Once );
+			else
+				fallbackClientMocker.Verify( c => c.GetAll<string>( fallbackValues.Keys ),
+				   Times.Never );
 
 			sessionClientMocker.VerifyNoOtherCalls();
 			fallbackClientMocker.VerifyNoOtherCalls();
@@ -482,9 +489,18 @@ namespace LVD.ServiceStackRoutedCacheClient.Tests
 			routedCacheClient.SetAll( fallbackValues );
 
 			if ( numSessionClientVals > 0 )
-				sessionClientMocker.Verify( c => c.SetAll( sessionValues ) );
+				sessionClientMocker.Verify( c => c.SetAll( sessionValues ),
+					Times.Once );
+			else
+				sessionClientMocker.Verify( c => c.SetAll( sessionValues ),
+					Times.Never );
+
 			if ( numFallbackClientVals > 0 )
-				fallbackClientMocker.Verify( c => c.SetAll( fallbackValues ) );
+				fallbackClientMocker.Verify( c => c.SetAll( fallbackValues ),
+					Times.Once );
+			else
+				fallbackClientMocker.Verify( c => c.SetAll( fallbackValues ),
+					Times.Never );
 
 			sessionClientMocker.VerifyNoOtherCalls();
 			fallbackClientMocker.VerifyNoOtherCalls();
@@ -771,6 +787,199 @@ namespace LVD.ServiceStackRoutedCacheClient.Tests
 
 			Assert.AreEqual( additionalRuleCount2,
 			   cacheClients.Count( r => r.Key.StartsWith( "mockCacheClient2" ) ) );
+		}
+
+		[Test]
+		[TestCase( true, true )]
+		[TestCase( true, false )]
+		[TestCase( false, true )]
+		[TestCase( false, false )]
+		[Repeat( 10 )]
+		public void Test_CorrectlyDisposed_WithExplicitAutoDisposeSettings ( bool autoDisposeFallbackClient, bool autoDisposeSessionClient )
+		{
+			Mock<ICacheClient> sessionClientMocker =
+			   new Mock<ICacheClient>( MockBehavior.Strict );
+
+			Mock<ICacheClient> fallbackClientMocker =
+			   new Mock<ICacheClient>( MockBehavior.Strict );
+
+			sessionClientMocker.Setup( c => c.Dispose() );
+			fallbackClientMocker.Setup( c => c.Dispose() );
+
+			ICacheClient sessionClient = sessionClientMocker.Object;
+			ICacheClient fallbackClient = fallbackClientMocker.Object;
+
+			IRoutedCacheClient routedCacheClient = new DefaultRoutedCacheClient( fallbackClient, autoDisposeFallbackClient );
+			routedCacheClient.PushClientWithRule( new KeyStartsWithStringCacheClientRule( sessionClient,
+				StringComparison.InvariantCultureIgnoreCase,
+				SessionKeyPrefix )
+			{
+				AutoDispose = autoDisposeSessionClient
+			} );
+
+			routedCacheClient.Dispose();
+
+			if ( autoDisposeSessionClient )
+				sessionClientMocker.Verify( c => c.Dispose(), Times.Once );
+			else
+				sessionClientMocker.Verify( c => c.Dispose(), Times.Never );
+
+			if ( autoDisposeFallbackClient )
+				fallbackClientMocker.Verify( c => c.Dispose(), Times.Once );
+			else
+				fallbackClientMocker.Verify( c => c.Dispose(), Times.Never );
+
+			sessionClientMocker.VerifyNoOtherCalls();
+			fallbackClientMocker.VerifyNoOtherCalls();
+
+			Assert_AllMethodsThrowObjectDisposedException( routedCacheClient );
+		}
+
+		[Test]
+		public void Test_CorrectlyDisposed_WithImplicityAutoDisposeSettings ()
+		{
+			Mock<ICacheClient> sessionClientMocker =
+			   new Mock<ICacheClient>( MockBehavior.Strict );
+
+			Mock<ICacheClient> fallbackClientMocker =
+			   new Mock<ICacheClient>( MockBehavior.Strict );
+
+			sessionClientMocker.Setup( c => c.Dispose() );
+			fallbackClientMocker.Setup( c => c.Dispose() );
+
+			ICacheClient sessionClient = sessionClientMocker.Object;
+			ICacheClient fallbackClient = fallbackClientMocker.Object;
+
+			IRoutedCacheClient routedCacheClient = new DefaultRoutedCacheClient( fallbackClient );
+			routedCacheClient.PushClientWithRule( new KeyStartsWithStringCacheClientRule( sessionClient,
+				StringComparison.InvariantCultureIgnoreCase,
+				SessionKeyPrefix ) );
+
+			routedCacheClient.Dispose();
+
+			sessionClientMocker.Verify( c => c.Dispose(), Times.Once );
+			fallbackClientMocker.Verify( c => c.Dispose(), Times.Once );
+
+			sessionClientMocker.VerifyNoOtherCalls();
+			fallbackClientMocker.VerifyNoOtherCalls();
+
+			Assert_AllMethodsThrowObjectDisposedException( routedCacheClient );
+		}
+
+		private void Assert_AllMethodsThrowObjectDisposedException ( IRoutedCacheClient routedCacheClient )
+		{
+			Faker faker = new Faker();
+
+			Assert.Throws<ObjectDisposedException>( () => routedCacheClient
+							.Add( RandomKey, faker.Random.Int() ) );
+			Assert.Throws<ObjectDisposedException>( () => routedCacheClient
+				.Add( SessionKey, faker.Random.Int() ) );
+
+			Assert.Throws<ObjectDisposedException>( () => routedCacheClient
+				.Add( RandomKey, faker.Random.Decimal(), faker.Date.Timespan() ) );
+			Assert.Throws<ObjectDisposedException>( () => routedCacheClient
+				.Add( SessionKey, faker.Random.Decimal(), faker.Date.Timespan() ) );
+
+			Assert.Throws<ObjectDisposedException>( () => routedCacheClient
+				.Add( RandomKey, faker.Random.String(), faker.Date.Future() ) );
+			Assert.Throws<ObjectDisposedException>( () => routedCacheClient
+				.Add( SessionKey, faker.Random.String(), faker.Date.Future() ) );
+
+			Assert.Throws<ObjectDisposedException>( () => routedCacheClient
+				.Decrement( RandomKey, faker.Random.UInt() ) );
+			Assert.Throws<ObjectDisposedException>( () => routedCacheClient
+				.Decrement( SessionKey, faker.Random.UInt() ) );
+
+			Assert.Throws<ObjectDisposedException>( () => routedCacheClient
+				.FlushAll() );
+			Assert.Throws<ObjectDisposedException>( () => routedCacheClient
+				.FlushAll() );
+
+			Assert.Throws<ObjectDisposedException>( () => routedCacheClient
+				.Get<string>( RandomKey ) );
+			Assert.Throws<ObjectDisposedException>( () => routedCacheClient
+				.Get<string>( SessionKey ) );
+
+			Assert.Throws<ObjectDisposedException>( () => routedCacheClient
+				.GetAll<string>( faker.Make( faker.Random.Int( 0, 100 ), () => RandomKey ) ) );
+			Assert.Throws<ObjectDisposedException>( () => routedCacheClient
+				.GetAll<string>( faker.Make( faker.Random.Int( 0, 100 ), () => SessionKeyPrefix ) ) );
+
+			Assert.Throws<ObjectDisposedException>( () => routedCacheClient
+				.GetKeysByPattern( SessionKeyPrefix ) );
+			Assert.Throws<ObjectDisposedException>( () => routedCacheClient
+				.GetKeysByPattern( RandomKeyPrefix ) );
+
+			Assert.Throws<ObjectDisposedException>( () => routedCacheClient
+				.GetTimeToLive( SessionKey ) );
+			Assert.Throws<ObjectDisposedException>( () => routedCacheClient
+				.GetTimeToLive( RandomKey ) );
+
+			Assert.Throws<ObjectDisposedException>( () => routedCacheClient
+				.Increment( RandomKey, faker.Random.UInt() ) );
+			Assert.Throws<ObjectDisposedException>( () => routedCacheClient
+				.Increment( SessionKey, faker.Random.UInt() ) );
+
+			Assert.Throws<ObjectDisposedException>( () => routedCacheClient
+				.Remove( SessionKey ) );
+			Assert.Throws<ObjectDisposedException>( () => routedCacheClient
+				.Remove( RandomKey ) );
+
+			Assert.Throws<ObjectDisposedException>( () => routedCacheClient
+				.RemoveAll( faker.Make( faker.Random.Int( 0, 100 ), () => RandomKey ) ) );
+			Assert.Throws<ObjectDisposedException>( () => routedCacheClient
+				.RemoveAll( faker.Make( faker.Random.Int( 0, 100 ), () => SessionKeyPrefix ) ) );
+
+			Assert.Throws<ObjectDisposedException>( () => routedCacheClient
+				.Replace( RandomKey, faker.Random.Int() ) );
+			Assert.Throws<ObjectDisposedException>( () => routedCacheClient
+				.Replace( SessionKey, faker.Random.Int() ) );
+
+			Assert.Throws<ObjectDisposedException>( () => routedCacheClient
+				.Replace( RandomKey, faker.Random.Decimal(), faker.Date.Timespan() ) );
+			Assert.Throws<ObjectDisposedException>( () => routedCacheClient
+				.Replace( SessionKey, faker.Random.Decimal(), faker.Date.Timespan() ) );
+
+			Assert.Throws<ObjectDisposedException>( () => routedCacheClient
+				.Replace( RandomKey, faker.Random.String(), faker.Date.Future() ) );
+			Assert.Throws<ObjectDisposedException>( () => routedCacheClient
+				.Replace( SessionKey, faker.Random.String(), faker.Date.Future() ) );
+
+			Assert.Throws<ObjectDisposedException>( () => routedCacheClient
+				.Set( RandomKey, faker.Random.Int() ) );
+			Assert.Throws<ObjectDisposedException>( () => routedCacheClient
+				.Set( SessionKey, faker.Random.Int() ) );
+
+			Assert.Throws<ObjectDisposedException>( () => routedCacheClient
+				.Set( RandomKey, faker.Random.Decimal(), faker.Date.Timespan() ) );
+			Assert.Throws<ObjectDisposedException>( () => routedCacheClient
+				.Set( SessionKey, faker.Random.Decimal(), faker.Date.Timespan() ) );
+
+			Assert.Throws<ObjectDisposedException>( () => routedCacheClient
+				.Set( RandomKey, faker.Random.String(), faker.Date.Future() ) );
+			Assert.Throws<ObjectDisposedException>( () => routedCacheClient
+				.Set( SessionKey, faker.Random.String(), faker.Date.Future() ) );
+
+			Assert.Throws<ObjectDisposedException>( () => routedCacheClient
+				 .SetAll( new Dictionary<string, string>( faker.Make(
+					 faker.Random.Int( 0, 100 ),
+					 () => new KeyValuePair<string, string>( RandomKey, faker.Random.String() )
+				) ) ) );
+			Assert.Throws<ObjectDisposedException>( () => routedCacheClient
+				 .SetAll( new Dictionary<string, int>( faker.Make(
+					 faker.Random.Int( 0, 100 ),
+					 () => new KeyValuePair<string, int>( SessionKey, faker.Random.Int() )
+				) ) ) );
+
+			Assert.Throws<ObjectDisposedException>( () => routedCacheClient
+				.PushClientWithRule( new Mock<IRoutedCacheClientRule>( MockBehavior.Loose ).Object ) );
+			Assert.Throws<ObjectDisposedException>( () => routedCacheClient
+				.ClearRules() );
+
+			Assert.Throws<ObjectDisposedException>( () => routedCacheClient
+				.GetRegisteredClients() );
+			Assert.Throws<ObjectDisposedException>( () => routedCacheClient
+				.GetRegisteredClientRules() );
 		}
 
 		private IRoutedCacheClient CreateRoutedCacheClient ( ICacheClient fallbackClient, ICacheClient sessionClient, params IRoutedCacheClientRule[] rules )

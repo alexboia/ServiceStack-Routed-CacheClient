@@ -26,6 +26,13 @@ namespace LVD.ServiceStackRoutedCacheClient
 
 			mClient = client;
 			mName = name ?? InferName( client.GetType() );
+			AutoDispose = true;
+		}
+
+		public BaseCacheClientRule ( string name, ICacheClient client, bool autoDispose )
+			: this( name, client )
+		{
+			AutoDispose = autoDispose;
 		}
 
 		private string InferName ( Type type )
@@ -41,6 +48,8 @@ namespace LVD.ServiceStackRoutedCacheClient
 		public virtual string Name => mName;
 
 		public virtual ICacheClient Client => mClient;
+
+		public virtual bool AutoDispose { get; set; }
 
 		public virtual Guid Id => mId;
 	}

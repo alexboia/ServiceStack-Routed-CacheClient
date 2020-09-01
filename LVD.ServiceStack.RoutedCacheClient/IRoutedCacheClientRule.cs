@@ -38,14 +38,16 @@ using System.Threading.Tasks;
 
 namespace LVD.ServiceStackRoutedCacheClient
 {
-   public interface IRoutedCacheClientRule
-   {
-      bool Matches ( string key );
+	public interface IRoutedCacheClientRule
+	{
+		bool Matches ( string key );
 
-      ICacheClient Client { get; }
+		ICacheClient Client { get; }
 
-      string Name { get; }
+		string Name { get; }
 
-      Guid Id { get; }
-   }
+		bool AutoDispose { get; set; }
+
+		Guid Id { get; }
+	}
 }
