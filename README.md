@@ -189,7 +189,26 @@ public class GenericConditionBasedCacheClientRule : BaseCacheClientRule
 }
 ```
 
-### 6. Sample project
+### 6. Dispose behaviour
+
+The dispose behaviour of the `DefaultRoutedCacheClient`, before version 1.1.0 was:
+
+- to automatically dispose all the registered cache clients by default (this could not be altered);
+- to no throw `ObjectDisposedException` when invoking methods on diposed instances.
+
+After 1.1.0, the behaviour is as follows:
+
+- to automatically dispose all the registered cache clients by default (this can now be configured);
+- to throw throw `ObjectDisposedException` when invoking methods on diposed instances.
+
+To change how `DefaultRoutedCacheClient` handles various registered cache clients you may:
+
+- use `DefaultRoutedCacheClient ( ICacheClient fallbackClient, bool autoDispose )` constructor to set 
+whether or not the fallback cache client should be disposed along with the `DefaultRoutedCacheClient` it is registered with;
+- use `IRoutedCacheClientRule.AutoDispose` property to set whether the cache client 
+associated with a rule should be disposed along with the `DefaultRoutedCacheClient` it is registered with.
+
+### 7. Sample project
 
 A sample project has been provided, to see just how this would behave in the real world.  
 Head over to `LVD.ServiceStack.RoutedCacheClient.Example` for the full details, but, in short, it exposes three service endpoints:
