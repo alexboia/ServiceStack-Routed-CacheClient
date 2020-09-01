@@ -10,6 +10,7 @@
 		<Copyright>2020, Alexandru BOIA</Copyright>
 		<PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
 		<PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
+		<Version>1.1.0</Version>
 	</PropertyGroup>
 
 	<ItemGroup>
