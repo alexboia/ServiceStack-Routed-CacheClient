@@ -21,10 +21,10 @@ Available as a NuGet package, [here](https://www.nuget.org/packages/LVD.ServiceS
 
 ### Via Package Manager
 
-`Install-Package LVD.ServiceStack.RoutedCacheClient -Version 1.0.0`
+`Install-Package LVD.ServiceStack.RoutedCacheClient -Version 1.1.0`
 
 ### Via .NET CLI
-`dotnet add package LVD.ServiceStack.RoutedCacheClient --version 1.0.0`
+`dotnet add package LVD.ServiceStack.RoutedCacheClient --version 1.1.0`
 
 ## How to use
 
